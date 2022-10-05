@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}回報{% endblock %}
+
+{% block body %}
+<div class="container">
+  <div class="row mt-3">    
+    <div class="col">
+      <h3>{{ user.Employee.name }}</h3>
+    </div>
+  </div>
+  <div id="dateSelector" class="mb-3">
+    <label for="date" class="form-label">日期</label>
+    <input type="date" class="form-control" id="date" onchange="get_dispatches()">
+  </div>
+  <div id="projectList" class="mb-3">
+    
+  </div>
+  <div id="btnGroup" class="mb-3 text-center">
+    <button type="button" class="btn btn-success" onclick="postReport()">回報</button>
+  </div>
+  <div id="btnGroup" class="mb-3 text-center">
+    <a href="/employeeReport/records">
+      <button type="button" class="btn btn-primary">查看記錄</button>
+    </a>
+  </div>
+</div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script>
+  var now = new Date();
+  var month = (now.getMonth() + 1);               
+  var day = now.getDate() + 1;
+  if (month < 10) 
+      month = "0" + month;
+  if (day < 10) 
+      day = "0" + day;
+  var today = now.getFullYear() + '-' + month + '-' + day;
+
+  let date = document.getElementById('date');
+  date.value = today;
+  get_dispatches();
+  function get_dispatches(){
+    const date = document.getElementById('date').value;
+    fetch(`/api/employeeDispatch/{{ user.employee_id }}?date=${date}`, {
+      'method': 'get'
+    }).then((response) => {
+      return response.json();
+    }).then((data) => {
+      let col1 = document.createElement('div');
+      col1.setAttribute('class', 'col-6');
+      let col2 = document.createElement('div');
+      col2.setAttribute('class', 'col-6');
+      for(i=0; i<data.length; i++){
+        let project_ = data[i];
+        let checkbox = `\
+          <div class="form-check">\
+              <input class="form-check-input dispatch-item" type="checkbox" id="${project_['project_id']}" ${project_['working_days']?'checked':''}>\
+              <label class="form-check-label" for="${project_['project_id']}">\
+                      ${project_['project_name']}\
+              </label>\
+          </div>\
+          `
+        if(i%2 === 0){
+            col1.innerHTML += checkbox
+        }else{
+            col2.innerHTML += checkbox
+        }
+      }
+      let row = document.createElement('div');
+      row.setAttribute('class', 'row');
+      let txt = document.createElement('p');
+      txt.innerHTML = "派工";
+      row.appendChild(txt);
+      if(col1.innerHTML){
+        row.appendChild(col1);
+        row.appendChild(col2);
+      }else{
+        row.innerHTML = '<p>無派工資料</p>';
+      }
+      let projectList = document.getElementById('projectList');
+      projectList.innerHTML = '';
+      projectList.appendChild(row);
+    });
+  }
+
+  function postReport(){
+    const date = document.getElementById('date').value;
+    let projectList = document.getElementById('projectList');
+    let inputs = projectList.querySelectorAll('input');
+    let projects = Object();
+    for(i=0; i<inputs.length; i++){
+      let item = inputs[i];
+      projects[item.id] = item.checked;
+    }
+    if(Object.keys(projects).length !== 0){
+      const data = {
+        'date': date,
+        'projects': projects
+      };
+      requset_and_toast_alert('/api/employeeDispatchReport/', 'put', data, '回報', false);
+    }
+  }
+</script>
+
+{% endblock %}

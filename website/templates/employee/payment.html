@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+{% block title %}在職紀錄{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="col">
+            <h1 id="employee" employee_id="{{ employee['employee_id'] }}">{{ employee['name'] }}．獎金紀錄</h1>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="create_btn">+新增獎金</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="records">
+            <thead>
+              <tr>
+                <th scope="col">日期</th>
+                <th scope="col">類別</th>
+                <th scope="col">金額</th>
+                <th scope="col">備註</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr sn="{{ record['sn'] }}">
+                    <td name="date">{{ record['date'] }}</td>
+                    <td name="type">{{ record['type'] }}</td>
+                    <td name="amount">{{ record['amount'] }}</td>
+                    <td name="notes">{{ record['notes'] if record['notes'] else null }}</td>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Matarial Using Modify Modal -->
+    <div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="modifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyModalLabel">{{ employee['name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="date">日期</label>
+                        <input type="date" class="form-control" id="date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="type">類別</label>
+                        <input type="text" class="form-control" id="type" list="type_list">
+                        <datalist id="type_list">
+                            <option value="獎金">
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="amount">金額</label>
+                        <input type="number" class="form-control" id="amount">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="notes">備註</label>
+                        <textarea class="form-control" id="notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">儲存</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </div>
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script>
+    function empty_all_input_value(){
+        let inputs = document.getElementsByTagName('input, textarea');
+        for(i=0; i<inputs.length; i++){
+            inputs[i].value = '';
+        };
+    };
+
+    const modifyModal = document.getElementById('modifyModal');
+    const modifyBody = modifyModal.querySelector('.modal-body');
+
+    let create_btn = document.getElementById('create_btn');
+    create_btn.addEventListener('click', () => {
+        const modifyModalINNER = new bootstrap.Modal('#modifyModal', {
+            keyboard: false
+        });
+        empty_all_input_value();
+        modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = 'none';
+        modifyModalINNER.show(modifyModal);
+    });
+    
+    const rows = document.getElementsByTagName('tbody')[0].querySelectorAll('tr');
+    for(pos=0; pos<rows.length; pos++){
+        const row = rows[pos];
+        row.addEventListener('click', (event) => {
+            const modifyModalINNER = new bootstrap.Modal('#modifyModal', {
+                keyboard: false
+            });
+            empty_all_input_value();
+            for(g=0; g<row.children.length; g++){
+                let item = row.children[g]
+                document.getElementById(item.getAttribute('name')).value = item.innerHTML;
+            }
+            modifyModal.querySelector('.modal-body').setAttribute('sn', row.getAttribute('sn'));
+            modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = pos!==1 & rows[0] === row ? 'block' : 'none';
+            modifyModalINNER.show(modifyModal);
+        });
+    }
+
+
+    // commit
+    let modifyButtons = document.getElementsByClassName('modifyButton');
+    const employee_id = document.getElementById('employee').getAttribute('employee_id');
+    let modalBody = modifyModal.querySelector('.modal-body');
+    for(i=0; i<modifyButtons.length; i++){
+        let btn = modifyButtons[i];
+        btn.addEventListener('click', () => {
+            let data = Object();
+            if(modalBody.getAttribute('sn')){
+                data['sn'] = modalBody.getAttribute('sn');
+            }
+            if(btn.name === 'save'){
+                for(j=0; j<modalBody.querySelectorAll('input').length; j++){
+                    let input_item = modalBody.querySelectorAll('input')[j];
+                    data[`${input_item.id}`] = input_item.value;
+                };
+                requset_and_toast_alert(`/api/employeePayment/${employee_id}`, 'put', data, '新增/修改');
+            }else if(btn.name === 'delete'){
+                requset_and_toast_alert(`/api/employeePayment/${employee_id}`, 'delete', data, '刪除');
+            }
+        });
+    };
+
+</script>
+{% endblock %}

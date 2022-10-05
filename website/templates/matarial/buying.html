@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+{% block title %}材料購買記錄{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">
+        <div class="col">
+            <h1 id="matarial" matarial_id="{{ matarial['matarial_id'] }}">{{ matarial['matarial_name'] }}．購買紀錄 (<a href="/matarial/?storehouse_id={{ storehouse['storehouse_id'] }}">{{ storehouse['storehouse_name'] }}</a>)</h1>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="create_btn">+購買材料</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="records">
+            <thead>
+              <tr>
+                <th scope="col">購買日期</th>
+                <th scope="col"><a href="/matarialSupplier">供應商</a></th>
+                <th scope="col">數量</th>
+                <th scope="col">平均單價</th>
+                <th scope="col">總價</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr sn="{{ record['sn'] }}">
+                    <td name="buying_date">{{ record['buying_date'] }}</td>
+                    <td name="matarial_supplier_id" style="display: none;">{{ record['matarial_supplier_id'] }}</td>
+                    <td name="matarial_supplier_name">{{ record['matarial_supplier_name'] }}</td>
+                    <td name="quantity">{{ record['quantity'] }}</td>
+                    <td name="unit_price">{{ "%.2f"|format((record['price']/record['quantity'])) }}</td>
+                    <td name="price">{{ record['price'] }}</td>
+                    <td name="storehouse_id" style="display: none;">{{ record['storehouse_id'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Matarial Buying Modify Modal -->
+    <div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="modifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyModalLabel">{{ matarial['matarial_name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="buying_date">購買日期</label>
+                        <input type="date" class="form-control" id="buying_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="matarial_supplier_id">供應商</label>
+                        <select class="form-select" id="matarial_supplier_id">
+
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="quantity">數量</label>
+                        <input type="number" class="form-control" id="quantity">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="price">總金額</label>
+                        <input type="number" class="form-control" id="price">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="storehouse_id">存入倉庫</label>
+                        <select class="form-select" id="storehouse_id">
+
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">儲存</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/matarial.js') }}"></script>
+<script>
+    const storehouse_id="{{ storehouse['storehouse_id'] }}";
+    function p_get_storehouese(){
+        return new Promise((resolve, reject) => {
+            fetch('/api/storehouse/', {
+                method: 'get'
+            }).then((response) => {
+                return response.json()
+            }).then((data) => {
+                resolve(data);
+            });
+        });
+    };
+    function p_get_matarial_supplier(){
+        return new Promise((resolve, reject) => {
+            fetch('/api/matarialSupplier/', {
+                method: 'get'
+            }).then((response) => {
+                return response.json()
+            }).then((data) => {
+                resolve(data);
+            });
+        });
+    };
+    async function get_storehouese_and_supplier(){
+        let storehoueses = await p_get_storehouese();
+        let storehoueses_select_ = document.getElementById('storehouse_id');
+        storehoueses_select_.innerHTML = '';
+        for(i=0; i<storehoueses.length; i++){
+            let option_ = document.createElement('option');
+            option_.innerHTML = storehoueses[i]['storehouse_name'];
+            option_.value = storehoueses[i]['storehouse_id']
+            storehoueses_select_.appendChild(option_);
+        }
+
+        let suppliers = await p_get_matarial_supplier();
+        let supplier_select_ = document.getElementById('matarial_supplier_id');
+        supplier_select_.innerHTML = '';
+        for(i=0; i<suppliers.length; i++){
+            let option_ = document.createElement('option');
+            option_.innerHTML = suppliers[i]['matarial_supplier_name'];
+            option_.value = suppliers[i]['matarial_supplier_id']
+            supplier_select_.appendChild(option_);
+        }
+    }
+
+
+    // set default date (today).
+    create_btn.addEventListener('click', function () {
+        let date = document.getElementById('buying_date');
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        var yyyy = today.getFullYear();
+
+        today = `${yyyy}-${mm}-${dd}`;
+        date.value = today;
+
+        get_storehouese_and_supplier().then( () => {
+            document.getElementById('storehouse_id').value = storehouse_id;
+        });
+        document.getElementById('storehouse_id').disabled=false;
+    });
+    // modify each record
+    const tableBody = document.getElementById('records').querySelector('tbody');
+    let rows = tableBody.querySelectorAll('tr');
+    for(r=0; r<rows.length; r++){
+        let row = rows[r];
+        
+        row.addEventListener('click', () => {
+            const modifyModal = new bootstrap.Modal('#modifyModal', {
+                keyboard: false
+            });
+            modalBody.setAttribute('sn', row.getAttribute('sn'));
+            get_storehouese_and_supplier().then(() => {
+                const inputs_ = modalBody.querySelectorAll('input, select');
+                for(j=0; j<inputs_.length; j++){
+                    let input_item = inputs_[j];
+                    input_item.value = row.querySelector(`[name="${input_item.id}"]`).textContent;
+                }
+
+            });
+            document.getElementById('storehouse_id').disabled=true;
+            modal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = '';
+            modifyModal.show(modal);
+        });
+    }
+    matarial_variation_commit('/api/matarial/buying/');
+</script>
+{% endblock %}

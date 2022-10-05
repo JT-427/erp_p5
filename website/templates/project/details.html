@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+{% block title %}報價單{% endblock %}
+{% block style %}
+
+
+{% endblock %}
+{% block body %}
+<div class="container">
+    <div class="row mt-3">
+        <div class="col">
+            <h1 id="project" project_id="{{ project['project_id'] }}">{{ project['project_name'] }}</h1>
+            <h3>{{ project['customer_name'] }}</h3>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="add_details">+新增項目</button>
+        </div>
+    <div class="row mt-3">
+        <table class="table table-bordered table-hover" style="vertical-align:middle;" id="project_table">
+            <thead>
+              <tr>
+                <th scope="col">項目</th>
+                <th scope="col">單位</th>
+                <th scope="col">數量</th>
+                <th scope="col">單價</th>
+                <th scope="col">金額</th>
+                <!-- <th scope="col">折扣</th> -->
+              </tr>
+            </thead>
+            <tbody>
+                {% for item in details %}
+                <tr class="data-row" id="{{ item['sn'] }}">
+                    <td name="description">{{ item['description'] }}</td>
+                    <td name="unit">{{ item['unit'] }}</td>
+                    <td name="quantity">{{ item['quantity'] }}</td>
+                    <td name="unit_price">$ {{ item['unit_price'] }}</td>
+                    <td name="price">$ {{ item['price'] }}</td>
+                    <!-- <td name="discount">{{ item['price'] - item['quantity']*item['unit_price'] }}</td> -->
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                {% if project['invoice'] %}
+                <tr>
+                    <td colspan="4">營業稅5%</td>
+                    <td>$ {{ total*0.05 }}</td>
+                </tr>
+                {% endif %}
+                {% if discount!=0 %}
+                <tr>
+                    <td colspan="4">折扣</td>
+                    <td>$ {{ "%.2f" | format(discount) }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td colspan="4">總金額</td>
+                    <td id="ar" project_id="{{ project['project_id'] }}">$ {{ project['account_receivable'] }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- 修改／刪除報價單 modal -->
+    <div class="modal fade" id="projectDetailModifyModal" tabindex="-1" aria-labelledby="projectDetailModifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectDetailModifyModalLabel">{{ project['project_name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="description">項目</label>
+                        <input type="text" class="form-control" id="description">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="unit">單位</label>
+                        <input type="text" class="form-control" id="unit">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="quantity">數量</label>
+                        <input type="number" class="form-control" id="quantity">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="unit_price">單價</label>
+                        <input type="number" class="form-control" id="unit_price">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="price">金額</label>
+                        <input type="number" class="form-control" id="price" disabled>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary projectDetailModifyButton" name="save">儲存</button>
+                    <button type="button" class="btn btn-danger projectDetailModifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- modify project AR -->
+    <div class="modal fade" id="modifyARModal" tabindex="-1" aria-labelledby="modifyARModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyARModalLabel">{{ project['project_name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="account_receivable">原總金額</label>
+                        <input type="number" class="form-control" id="account_receivable" disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="adjusted_account_receivable">調整後總額</label>
+                        <input type="number" class="form-control" id="adjusted_account_receivable">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="total_discount">折扣</label>
+                        <input type="number" class="form-control" id="total_discount" disabled>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" name="submit">送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script>
+    const headers = ["description", "unit", "quantity", "unit_price", "price"];
+    const project_id = document.getElementById('project').getAttribute('project_id');
+    
+    // 新增報價單
+    let add_details_btn = document.getElementById('add_details');
+    add_details_btn.addEventListener('click', () => {
+        const modifyModal = new bootstrap.Modal('#projectDetailModifyModal', {
+            keyboard: false
+        });
+        let modal = document.getElementById('projectDetailModifyModal');
+        let modalBody = modal.querySelector('.modal-body');
+        modalBody.removeAttribute('sn');
+        let inputs = modal.querySelectorAll('input');
+        for(pos=0; pos<inputs.length; pos++){
+            inputs[pos].value = '';
+        }
+        summation();
+        let modalFooter = modal.querySelector('.modal-footer');
+        modalFooter.querySelector('[name="delete"]').style.display = 'none';
+        modifyModal.show(modal);
+    });
+
+    // 點擊跳出修改報價單之畫面
+    let data_row = document.getElementsByClassName('data-row');
+    for(i=0; i<data_row.length; i++){
+        let row = data_row[i];
+        row.addEventListener('click', () => {
+            const projectDetailModifyModal = new bootstrap.Modal('#projectDetailModifyModal', {
+                keyboard: false
+            });
+            let modal = document.getElementById('projectDetailModifyModal');
+            let modalBody = modal.querySelector('.modal-body');
+            modalBody.setAttribute('sn', row.getAttribute('id'));
+            for(g=0; g<headers.length; g++){
+                let item = row.children[g];
+                let value_ = item.innerHTML.substring(0, 1) === '$' ? item.innerHTML.substring(2):item.innerHTML;
+                document.getElementById(headers[g]).value = value_;
+            }
+            summation();
+            modal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = '';
+            projectDetailModifyModal.show(modal);
+        });
+    };
+
+    // 送出修改報價單
+    let projectDetailModifyButtons = document.getElementsByClassName('projectDetailModifyButton');
+    for(i=0; i<projectDetailModifyButtons.length; i++){
+        let btn = projectDetailModifyButtons[i]
+        btn.addEventListener('click', () => {
+            let modal = document.getElementById('projectDetailModifyModal');
+            let modalBody = modal.querySelector('.modal-body');
+            data = Object();
+            if(btn.name === 'save'){
+                for(i=0; i<headers.length; i++){
+                    let item_value = document.getElementById(headers[i]).value;
+                    data[headers[i]] = item_value;
+                }
+                if(modalBody.getAttribute('sn')){
+                    data['sn'] = modalBody.getAttribute('sn');
+                }
+                requset_and_toast_alert('/api/projectDetails/'+project_id, 'put', data, '新增');
+            }else if(btn.name === 'delete'){
+                if(modalBody.getAttribute('sn')){
+                    data['sn'] = modalBody.getAttribute('sn');
+                    requset_and_toast_alert('/api/projectDetails/'+project_id, 'delete', data, '刪除');
+                }
+            }
+            // window.location.reload();
+        });
+    };
+
+    // 自動計算總金額
+    function summation(){
+        let quantity_input = document.getElementById('quantity');
+        let unit_price_input = document.getElementById('unit_price');
+        let price_input = document.getElementById('price');
+        let modalBody = document.querySelector('.modal-body');
+        let price_label = modalBody.children[modalBody.children.length-1].children[0];
+
+        if(quantity_input.value != '' & unit_price_input.value != ''){
+            let quantity_ = parseFloat(quantity_input.value);
+            let unit_price_ = parseFloat(unit_price_input.value);
+            let summation_ = quantity_ * unit_price_;
+            price_label.innerHTML = `金額（數量 × 單價 = ${quantity_*unit_price_}）`;
+            // if(price_input.value == ''){
+            price_input.value = quantity_*unit_price_
+            // }
+        }else{
+            price_label.innerHTML = '金額';
+        }
+    }
+    let quantity_input = document.getElementById('quantity');
+    let unit_price_input = document.getElementById('unit_price');
+    quantity_input.addEventListener('blur', () => {
+        summation();
+    });
+    unit_price_input.addEventListener('blur', () => {
+        summation();
+    });
+
+    document.getElementById('ar').addEventListener('click', (event) => {
+        const thisModal = new bootstrap.Modal('#modifyARModal', {
+            keyboard: false
+        });
+        const modifyARModal = document.getElementById('modifyARModal');
+        const ar = event.target;
+        const inputs_ = modifyARModal.querySelectorAll('input');
+
+        inputs_[0].value = Number(ar.innerHTML.substring(2));
+        inputs_[1].addEventListener('keyup', (event) => {
+            inputs_[2].value = inputs_[0].value - Number(event.target.value);
+        })
+        const project_id = ar.getAttribute('project_id');
+        const btn = modifyARModal.querySelector('[name="submit"]');
+
+        btn.addEventListener('click', () => {
+            const data = {
+                'account_receivable': inputs_[1].value
+            }
+            requset_and_toast_alert('/api/project/'+project_id, 'patch', data, '修改');
+        })
+        thisModal.show(modifyARModal);
+    })
+
+</script>
+{% endblock %}

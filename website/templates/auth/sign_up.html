@@ -1,0 +1,90 @@
+{% extends "auth/base.html" %}
+{% block title %}註冊{% endblock %}
+{% block body %}
+<div class="login-box">
+    <h2>明長有限公司</h2>
+    <form>
+        <div class="user-box">
+            <input type="text" id="account">
+            <label>帳號</label>
+        </div>
+        <div class="user-box">
+            <input type="password" id="pwd">
+            <label>密碼</label>
+        </div>
+        <div class="user-box">
+            <input type="password" id="pwdcheck">
+            <label>確認密碼</label>
+        </div>
+        <a href="#" id="sign_up">
+            註冊
+        </a>
+    </form>
+</div>
+
+<script>
+    const btn = document.getElementById('sign_up');
+    btn.addEventListener('click', () => {
+        const account = document.getElementById('account').value.trim();
+        const pwd = document.getElementById('pwd').value.trim();
+        const pwdcheck = document.getElementById('pwdcheck').value.trim();
+        if(pwd.length < 8){
+            // too short!
+            toast('密碼需要至少８個字元');
+        }else if(pwd !== pwdcheck){
+            // not match!
+            toast('請確認密碼');
+        }else{
+            const form_data = {
+                'account': account,
+                'password': pwd
+            }
+            post_data('/sign-up', form_data)
+        }
+    });
+
+    function post_data(url, form_data){
+        fetch(url, {
+            method: 'post',
+            body: JSON.stringify(form_data),
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        }).then((response) => {
+            return response
+        }).then((response) => {
+            const status = response.status;
+            if(status === 401 || status === 403){
+                response.text().then((message) => {
+                    toast(message)
+                });
+            }else if(status === 308){
+                response.text().then((url) => {
+                    toast('註冊成功', true)
+                    window.setTimeout(
+                        (() => window.location.href = url), 1500
+                    );
+                });
+            }
+            
+        });
+    };
+
+    function toast(message, success=false){
+        const toastLiveExample = document.getElementById('liveToast')
+        if(success){
+            toastLiveExample.className = 'toast text-white bg-danger';
+        }else{
+            document.getElementById('pwd').value = '';
+            document.getElementById('pwdcheck').value = '';
+        }
+        toastLiveExample.getElementsByClassName('toast-body')[0].innerHTML = message;
+        const toast = new bootstrap.Toast(toastLiveExample)
+        toast.show();
+        window.setTimeout(
+            (() => toast.hide()), 1500
+        );
+    }
+
+</script>
+{% endblock %}

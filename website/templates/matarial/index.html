@@ -1,0 +1,308 @@
+{% extends "base.html" %}
+{% block title %}材料{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">
+        <div class="col">
+            <h1>{{ storehouse['storehouse_name'] }}</h1>
+        </div>
+        <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+          <div class="input-group">
+            <input type="text" id="tableSearchInput" class="form-control" placeholder="搜尋..." aria-label="table search" aria-describedby="tableSearch">
+            <button class="btn btn-primary" id="tableSearch">搜尋</button>
+          </div>
+          <button type="button" class="btn btn-primary" id="add_matarial">+新增材料</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="dataTable">
+            <thead>
+              <tr>
+                <th scope="col">材料</th>
+                <th scope="col">餘量</th>
+                <th scope="col" style="display:none;">單位</th>
+                <th scope="col">備註</th>
+                <th scope="col">轉移</th>
+                <th scope="col">使用紀錄</th>
+                <th scope="col">購買紀錄</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for matarial in matarials %}
+                <tr id="{{ matarial['matarial_id'] }}">
+                    <td m_id="{{ matarial['matarial_id'] }}" class="data-row" name="matarial_name">{{ matarial['matarial_name'] }}</td>
+                    <td name="remaining">{{ matarial['remaining'] if matarial['remaining'] else 0}} {{ matarial['unit'] }}</td>
+                    <td name="unit" style="display:none;">{{ matarial['unit'] }}</td>
+                    <td name="notes">{{ matarial['notes'] if matarial['notes'] else null }}</td>
+                    <td>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#matarialTransferModal" data-bs-whatever="{{ matarial['matarial_id'] }}">
+                            <i class="fa-solid fa-arrow-right-arrow-left"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <a href="/matarial/using?matarial_id={{ matarial['matarial_id'] }}&storehouse_id={{ storehouse['storehouse_id'] }}">
+                            <button type="button" class="btn btn-warning">
+                                <i class="fas fa-clipboard" aria-hidden="true"></i>
+                            </button>
+                        </a>
+                    </td>
+                    <td>
+                        <a href="/matarial/buying?matarial_id={{ matarial['matarial_id'] }}&storehouse_id={{ storehouse['storehouse_id'] }}">
+                            <button type="button" class="btn btn-warning">
+                                <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                            </button>
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+
+    <!-- remaining adjustment matarial -->
+    <div class="modal fade" id="matarialRemainingAdjustmentModal" tabindex="-1" aria-labelledby="matarialRemainingAdjustmentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matarialRemainingAdjustmentModalLabel">餘額調整</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <!-- 原始餘量 -->
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="remaining">調整後餘量</label>
+                        <input type="number" class="form-control" id="remaining" required>
+                    </div>
+                    <div class="mb-3">
+                        <!-- 變化量 -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="reDir()">調整記錄</button>
+                    <button type="button" class="btn btn-success" onclick="submitAdjustment()">送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- transfer matarial -->
+    <div class="modal fade" id="matarialTransferModal" tabindex="-1" aria-labelledby="matarialTransferModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matarialTransferModalLabel">轉移材料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="storehouse_id_from" class="form-label">從</label>
+                        <select id="storehouse_id_from" class="form-select" disabled>
+                            <!--  -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="storehouse_id_to" class="form-label">到</label>
+                        <select id="storehouse_id_to" class="form-select" required>
+                            <!--  -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="quantity">量</label>
+                        <input type="number" class="form-control" id="quantity" required>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" onclick="reDir()">轉移記錄</button>
+                    <button type="button" class="btn btn-success" onclick="submitTransfer()">送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- add matarial modal -->
+    <div class="modal fade" id="matarialModifyModal" tabindex="-1" aria-labelledby="matarialModifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="matarialModifyModalLabel">新增材料</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="matarial_name">材料名稱</label>
+                        <input type="text" class="form-control" id="matarial_name">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="notes">備註</label>
+                        <textarea type="text" class="form-control" id="notes"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="unit">單位</label>
+                        <input type="text" class="form-control" id="unit">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">送出</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/table_serach.js') }}"></script>
+<script>
+    const storehouse_id = "{{ storehouse['storehouse_id'] }}";
+    const storehouse_name = "{{ storehouse['storehouse_name'] }}";
+
+    const matarialTransferModal = document.getElementById('matarialTransferModal');
+    matarialTransferModal.addEventListener('show.bs.modal', event => {
+        const matarialTransferModalBody = matarialTransferModal.querySelector('.modal-body');
+        matarialTransferModalBody.setAttribute('matarial_id', event.relatedTarget.getAttribute('data-bs-whatever'))
+
+        const storehouse_id_from_input = document.getElementById('storehouse_id_from');
+        let foption = document.createElement('option');
+        foption.value = storehouse_id;
+        foption.innerHTML = storehouse_name;
+        storehouse_id_from_input.appendChild(foption)
+
+        fetch('/api/storehouse/', {
+            method: 'get'
+        }).then((response) => {
+            return response.json();
+        }).then((data) => {
+            const storehouse_id_to_input = document.getElementById('storehouse_id_to');
+            for(i=0; i<data.length; i++){
+                let storehouse_info = data[i];
+                if(storehouse_info['storehouse_id'] !== storehouse_id){
+                    let option_ = document.createElement('option');
+                    option_.value = storehouse_info['storehouse_id'];
+                    option_.innerHTML = storehouse_info['storehouse_name'];
+                    storehouse_id_to_input.appendChild(option_);
+                }
+            }
+        })
+    });
+
+    // add matarial
+    let add_matarial_btn = document.getElementById('add_matarial');
+    add_matarial_btn.addEventListener('click', () => {
+        const matarialModifyModal = new bootstrap.Modal('#matarialModifyModal', {
+            keyboard: false
+        });
+        let modal = document.getElementById('matarialModifyModal');
+        let title = modal.querySelector('.modal-header').querySelector('h5');
+        title.innerHTML = '新增材料';
+        const inputs_ = modal.querySelectorAll('input, textarea');
+        for(i=0; i<inputs_.length; i++){
+            inputs_[i].value = '';
+        }
+
+        let modalFooter = modal.querySelector('.modal-footer');
+        let btnSave = modalFooter.querySelector('[name="save"]');
+        btnSave.setAttribute('onclick', 'post_data()');
+        btnSave.innerHTML = '送出';
+        modalFooter.querySelector('[name="delete"]').style.display='none';
+
+        matarialModifyModal.show(modal);
+    });
+
+    // modify data
+    let data_row = document.getElementById('dataTable').querySelector('tbody').querySelectorAll('tr');
+    for(i=0; i<data_row.length; i++){
+        let row = data_row[i].children;
+        // 編輯基本資料
+        row[0].addEventListener('click', (event) => {
+            const projectDetailModifyModal = new bootstrap.Modal('#matarialModifyModal', {
+                keyboard: false
+            });
+            let modal = document.getElementById('matarialModifyModal');
+            let title = modal.querySelector('.modal-header').querySelector('h5');
+            title.innerHTML = '更新材料資訊';
+            let modalFooter = modal.querySelector('.modal-footer');
+            let btnSave = modalFooter.querySelector('[name="save"]');
+            btnSave.setAttribute('onclick', `put_data('${event.target.getAttribute('m_id')}')`);
+            btnSave.innerHTML = '儲存';
+            let btnDelete = modalFooter.querySelector('[name="delete"]');
+            btnDelete.style.display='block';
+            btnDelete.setAttribute('onclick', `delete_data('${event.target.getAttribute('m_id')}')`);
+
+
+            const tr = event.target.parentNode;
+            document.getElementById('matarial_name').value = tr.children[0].innerHTML;
+            document.getElementById('notes').value = tr.children[3].innerHTML;
+            document.getElementById('unit').value = tr.children[2].innerHTML;
+
+            projectDetailModifyModal.show(modal);
+        });
+
+        // 調整餘量
+        row[1].addEventListener('click', (event) => {
+            const matarialRemainingAdjustmentModal = new bootstrap.Modal('#matarialRemainingAdjustmentModal', {
+                keyboard: false
+            });
+            const thisModal = document.getElementById('matarialRemainingAdjustmentModal');
+            let thisModalBody = thisModal.querySelector('.modal-body');
+            thisModalBody.children[0].innerHTML = `原始餘量: ${event.target.innerHTML}`;
+            const remaining = document.getElementById('remaining');
+            remaining.addEventListener('keyup', () => {
+                thisModalBody.children[2].innerHTML = `變化量: ${remaining.value - parseFloat(event.target.innerHTML.split(' ')[0])}`
+            });
+            const matarial_id = event.target.parentNode.id;
+            let thisModalFooter = thisModal.querySelector('.modal-footer');
+            thisModalFooter.children[1].setAttribute('onclick', `submitAdjustment('${matarial_id}')`)
+            matarialRemainingAdjustmentModal.show(thisModal);
+        })
+    }
+
+    function post_data(){
+        const data = {
+            'matarial_name': document.getElementById('matarial_name').value,
+            'notes': document.getElementById('notes').value,
+            'unit': document.getElementById('unit').value
+        }
+        requset_and_toast_alert('/api/matarial/', 'post', data, '新增');
+    };
+    function put_data(matarial_id){
+        const data = {
+            'matarial_name': document.getElementById('matarial_name').value,
+            'notes': document.getElementById('notes').value,
+            'unit': document.getElementById('unit').value
+        }
+        requset_and_toast_alert('/api/matarial/'+matarial_id, 'put', data, '修改');
+    }
+    function delete_data(matarial_id){
+        requset_and_toast_alert('/api/matarial/'+matarial_id, 'delete', {}, '刪除');
+    }
+
+    function submitTransfer(){
+        const matarialTransferModalBody = matarialTransferModal.querySelector('.modal-body');
+        const matarial_id = matarialTransferModalBody.getAttribute('matarial_id');
+        let data = Object();
+        const inputs_ = matarialTransferModalBody.querySelectorAll('input, select');
+        for(i=0; i<inputs_.length; i++){
+            data[inputs_[i].id] = inputs_[i].value;
+        }
+        requset_and_toast_alert('/api/matarial/transfer/'+ matarial_id, 'put', data, '新增')
+    }
+    function reDir(){
+        const matarialTransferModalBody = matarialTransferModal.querySelector('.modal-body');
+        const matarial_id = matarialTransferModalBody.getAttribute('matarial_id');
+        window.location.href = '/matarial/transfer?matarial_id='+matarial_id;
+    }
+
+    function submitAdjustment(matarial_id){
+        const remaining = document.getElementById('remaining');
+        const data = {
+            'storehouse_id': storehouse_id,
+            'remaining': remaining.value
+        }
+        requset_and_toast_alert('/api/matarial/'+ matarial_id, 'patch', data, '新增')
+    }
+</script>
+{% endblock %}

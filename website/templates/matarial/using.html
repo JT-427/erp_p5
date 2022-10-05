@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block title %}材料使用紀錄{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="col">
+            <h1 id="matarial" matarial_id="{{ matarial['matarial_id'] }}">{{ matarial['matarial_name'] }}．使用紀錄 (<a href="/matarial/?storehouse_id={{ storehouse['storehouse_id'] }}">{{ storehouse['storehouse_name'] }}</a>)</h1>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="create_btn">+使用材料</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="records">
+            <thead>
+              <tr>
+                <th scope="col">使用日期</th>
+                <th scope="col">數量</th>
+                <th scope="col">案場</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr sn="{{ record['sn'] }}">
+                    <td name="using_date">{{ record['date'] }}</td>
+                    <td name="quantity">{{ record['quantity'] }}</td>
+                    <td name="project_name">{{ record['project_name'] }}</td>
+                    <td name="project_id" style="display:none;">{{ record['project_id'] }}</td>
+                    <td name="storehouse_id" style="display: none;">{{ record['storehouse_id'] }}</td>
+                    <td name="employee_id" style="display: none;">{{ record['employee_id'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Matarial Using Modify Modal -->
+    <div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="modifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyModalLabel">{{ matarial['matarial_name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="using_date">使用日期</label>
+                        <input type="date" class="form-control" id="using_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="quantity">數量</label>
+                        <input type="number" class="form-control" id="quantity">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="employee_id">負責人</label>
+                        <select class="form-select" id="employee_id">
+                            <!--  -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="project_id" class="form-label">案場</label>
+                        <select id="project_id" class="form-select">
+                            <!--  -->
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="storehouse_id">存入倉庫</label>
+                        <select class="form-select" id="storehouse_id">
+                            <!--  -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">儲存</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/matarial.js') }}"></script>
+<script>
+    const storehouse_id="{{ storehouse['storehouse_id'] }}";
+    // set default date (today).
+    create_btn.addEventListener('click', function () {
+        let date = document.getElementById('using_date');
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        var yyyy = today.getFullYear();
+
+        today = `${yyyy}-${mm}-${dd}`;
+        date.value = today;
+        document.getElementById('storehouse_id').disabled=false;
+        get_project(today);
+        get_storehouese().then( () => {
+            document.getElementById('storehouse_id').value = storehouse_id;
+        });;
+        get_employees();
+    });
+
+    // get project info when the date change.
+    let date_selector = document.getElementById('using_date');
+    date_selector.addEventListener('change', () => {
+        get_project(date_selector.value);
+    });
+
+    function get_project(date){
+        return new Promise((resolve, reject) => {
+            fetch('/api/project/?date='+date, {
+                method: 'get'
+            }).then(function(response){
+                return response.json();
+            }).then(function(data){
+                let projects_option = document.getElementById('project_id');
+                projects_option.innerHTML = '';
+                for(i=0; i<data.length; i++){
+                    let row = data[i];
+                    let option = document.createElement('option');
+                    option.value = row['project_id'];
+                    option.innerHTML = row['project_name'];
+                    projects_option.appendChild(option);
+                }
+                resolve('success');
+            });
+        });
+        
+    };
+    function get_storehouese(){
+        return new Promise((resolve, reject) => {
+            fetch('/api/storehouse/', {
+                method: 'get'
+            }).then((response) => {
+                return response.json()
+            }).then((data) => {
+                let select_ = document.getElementById('storehouse_id');
+                select_.innerHTML = '';
+
+                for(i=0; i<data.length; i++){
+                    let option_ = document.createElement('option');
+                    option_.innerHTML = data[i]['storehouse_name'];
+                    option_.value = data[i]['storehouse_id']
+                    select_.appendChild(option_);
+                }
+                resolve();
+            });
+        });
+    };
+    function get_employees(){
+        return new Promise((resolve, reject) => {
+            fetch('/api/employee/', {
+                method: 'get'
+            }).then((response) => {
+                return response.json()
+            }).then((data) => {
+                let select_ = document.getElementById('employee_id');
+                select_.innerHTML = '';
+
+                for(i=0; i<data.length; i++){
+                    let option_ = document.createElement('option');
+                    option_.innerHTML = data[i]['name'];
+                    option_.value = data[i]['employee_id']
+                    select_.appendChild(option_);
+                }
+                resolve();
+            });
+        }); 
+    }
+
+    // modify each record
+    const tableBody = document.getElementById('records').querySelector('tbody');
+    let rows = tableBody.querySelectorAll('tr');
+    for(r=0; r<rows.length; r++){
+        let row = rows[r];
+        
+        row.addEventListener('click', () => {
+            const modifyModal = new bootstrap.Modal('#modifyModal', {
+                keyboard: false
+            });
+            modalBody.setAttribute('sn', row.getAttribute('sn'));
+            async function data_fillin(){
+                let project = await get_project(date = document.getElementById('using_date').value);
+                let storehouese = await get_storehouese();
+                let employee = await get_employees();
+            }
+            data_fillin().then(() => {
+                for(j=0; j<modalBody.querySelectorAll('input, select').length; j++){
+                    let item = modalBody.querySelectorAll('input, select')[j];
+                    item.value = row.querySelector(`[name="${item.id}"]`).textContent;
+                }
+            });
+            document.getElementById('storehouse_id').disabled=true;
+            modal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = '';
+            modifyModal.show(modal);
+        });
+    }
+    matarial_variation_commit('/api/matarial/using/');
+</script>
+{% endblock %}

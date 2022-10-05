@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}派工紀錄{% endblock %}
+{% block style %}
+
+
+{% endblock %}
+{% block body %}
+<div class="container">
+    <div class="row mt-3">
+        <div class="col">
+            <h1 id="project" project_id="{{ project['project_id'] }}">{{ project['project_name'] }}・派工紀錄</h1>
+        </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="project_table">
+            <thead>
+              <tr>
+                <th scope="col">派工日期</th>
+                <th scope="col">員工姓名</th>
+                <th scope="col">派工</th>
+                <th scope="col">實際工時</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for item in dispatches %}
+                <tr class="data-row" id="{{ item['sn'] }}">
+                    <td name="date">{{ item['date'] }}</td>
+                    <td name="name">{{ item['name'] }}</td>
+                    <td name="assigned">{{ '是' if item['assigned'] else '否' }}</td>
+                    <td name="working_days">{{ item['working_days'] if item['working_days'] else '' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <!-- <tr>
+                    <td colspan="4">總金額</td>
+                    <td></td>
+                    <td></td>
+                </tr> -->
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- 修改／刪除報價單 modal -->
+    <div class="modal fade" id="projectDetailModifyModal" tabindex="-1" aria-labelledby="projectDetailModifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="projectDetailModifyModalLabel">{{ project['project_name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="description">項目</label>
+                        <input type="text" class="form-control" id="description">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="unit">單位</label>
+                        <input type="text" class="form-control" id="unit">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="quantity">數量</label>
+                        <input type="number" class="form-control" id="quantity">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="unit_price">單價</label>
+                        <input type="number" class="form-control" id="unit_price">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="price">金額</label>
+                        <input type="number" class="form-control" id="price">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary projectDetailModifyButton" name="save">儲存</button>
+                    <button type="button" class="btn btn-danger projectDetailModifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script>
+    
+</script>
+{% endblock %}

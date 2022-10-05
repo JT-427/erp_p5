@@ -1,0 +1,267 @@
+{% extends "base.html" %}
+{% block title %}雜支{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+        <div class="input-group">
+            <input type="text" id="tableSearchInput" class="form-control" placeholder="搜尋..." aria-label="table search" aria-describedby="tableSearch">
+            <button class="btn btn-primary" id="tableSearch">搜尋</button>
+        </div>
+        <button type="button" class="btn btn-primary" id="createButton">+新增記錄</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="dataTable">
+        <thead>
+            <tr>
+            <th scope="col">日期</th>
+            <th scope="col">請款人</th>
+            <th scope="col">案場</th>
+            <th scope="col">描述</th>
+            <th scope="col">類別</th>
+            <th scope="col">金額</th>
+            {% if admin %}
+            <th scope="col">登記人</th>
+            {% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for record in records %}
+            <tr sn="{{ record['sn'] }}">
+                <td name="date">{{ record['date'] }}</td>
+                <td name="employee_name">{{ record['name'] if record['name'] else null }}</td>
+                <td name="employee_id" style="display: none;">{{ record['employee_id'] if record['employee_id'] else null }}</td>
+                <td name="project_name">{{ record['project_name'] if record['project_name'] else null }}</td>
+                <td name="project_id" style="display: none;">{{ record['project_id'] if record['project_id'] else null }}</td>
+                <td name="description">{{ record['description'] }}</td>
+                <td name="classification">{{ record['classification'] }}</td>
+                <td name="price">{{ record['price'] }}</td>
+                {% if admin %}
+                <td>{{ record['register'] }}</td>
+                {% endif %}
+            </tr>
+            {% endfor %}
+        </tbody>
+        </table>
+    </div>
+    <div class="modal fade" id="modifyDataModal" tabindex="-1" aria-labelledby="modifyDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyDataModalLabel"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="date">日期</label>
+                        <input type="date" class="form-control" id="date">
+                    </div>
+                    <div class="mb-3">
+                        <label for="employee_id" class="form-label">請款人</label>
+                        <select id="employee_id" class="form-select">
+                            
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="project_id" class="form-label">案場</label>
+                        <select id="project_id" class="form-select">
+                            
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="description">描述</label>
+                        <input type="text" class="form-control" id="description">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="classification">類別</label>
+                        <input type="text" class="form-control" id="classification" list="records">
+                        <datalist id="records">
+                            <!-- {% for record in records %}
+                            <option value="{{ record['description'] }}">
+                            {% endfor %} -->
+                        </datalist>
+                    </div>
+                    <div class="mb-3">
+                        <label for="price" class="form-label">價錢</label>
+                        <input type="number" class="form-control" id="price">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">送出</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+  
+  
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/table_serach.js') }}"></script>
+<script>
+    const content = 'storehouse';
+    const chineseName = '雜支';
+    // modal
+    const modal = document.getElementById('modifyDataModal');
+    const modalHeader = modal.querySelector('.modal-header');
+    const modalBody = modal.querySelector('.modal-body');
+    const modalFooter = modal.querySelector('.modal-footer');
+    // table
+    const table = document.getElementById('dataTable');
+    const tbody = table.querySelector('tbody');
+
+
+    // create
+    const create_btn = document.getElementById('createButton');
+    create_btn.addEventListener('click', () => {
+        const modifyDataModal = new bootstrap.Modal(`#modifyDataModal`, {
+            keyboard: false
+        });
+        let title = modal.querySelector('.modal-header').querySelector('h5');
+        title.innerHTML = '新增' + chineseName;
+        
+        modalBody.removeAttribute('sn');
+        const inputs_ = modal.querySelectorAll('input, textarea');
+        for(i=0; i<inputs_.length; i++){
+            inputs_[i].value = '';
+        }
+
+        let date = document.getElementById('date');
+        var today = new Date();
+        var dd = String(today.getDate()).padStart(2, '0');
+        var mm = String(today.getMonth() + 1).padStart(2, '0'); //January is 0!
+        var yyyy = today.getFullYear();
+
+        today = `${yyyy}-${mm}-${dd}`;
+        date.value = today;
+        get_project(today);
+        get_employee(today);
+
+        modalFooter.querySelector('[name="delete"]').style.display = 'none';
+        modifyDataModal.show(modal);
+    });
+    document.getElementById('date').addEventListener('change', (event) => {
+        const this_value = document.getElementById('project_id').value;
+        get_project(event.target.value);
+        get_employee(event.target.value);
+    })
+
+    // modify data modal
+    const data_row = tbody.querySelectorAll('tr');
+    for(i=0; i<data_row.length; i++){
+        let row = data_row[i];
+        row.addEventListener('click', (event) => {
+            const modifyDataModal = new bootstrap.Modal(`#modifyDataModal`, {
+                keyboard: false
+            });
+            // title
+            let title = modalHeader.querySelector('h5');
+            title.innerHTML = `更新${chineseName}資訊`;
+            // body
+            modalBody.setAttribute('sn', row.getAttribute('sn'));
+            let thisDate = event.target.parentElement.querySelector('[name="date"]').innerHTML;
+            async function getData(date){
+                await get_employee(date);
+                await get_project(date);
+                for(g=0; g<row.children.length; g++){
+                    let item = row.children[g];
+                    let input_ = document.getElementById(item.getAttribute('name'));
+                    if(input_){
+                        input_.value = item.innerHTML;
+                    }
+                }
+            }
+            getData(thisDate);
+            
+            // footer
+            modalFooter.querySelector('[name="delete"]').style.display = 'block';
+            modifyDataModal.show(modal);
+        });
+    }
+
+    const modifyButtons = document.getElementsByClassName('modifyButton');
+    for(i=0; i<modifyButtons.length; i++){
+        const btn = modifyButtons[i];
+        btn.addEventListener('click', (event) => {
+            let input_ = modalBody.querySelectorAll('input, select');
+            let data = Object();
+            for(g=0; g<input_.length; g++){
+                let item = input_[g];
+                var value = item.value;
+                value = value !== '' ? value:null;
+                data[item.id] = value;
+            }
+            const sn = modalBody.getAttribute('sn');
+            if(sn){
+                data['sn'] = sn
+            }
+
+            if(event.target.name==='save'){
+                requset_and_toast_alert('/api/miscellaneousExpenditure/', 'put', data, '新增/修改');
+            }else{
+                requset_and_toast_alert('/api/miscellaneousExpenditure/', 'delete', data, '刪除');
+            }
+        }) 
+    }
+
+    function get_project(date){
+        return new Promise((resolve, reject) => {
+            fetch('/api/project/?date='+date, {
+                method: 'get'
+            }).then(function(response){
+                return response.json();
+            }).then(function(data){
+                let projects_option = document.getElementById('project_id');
+                projects_option.innerHTML = '<option></option>';
+                for(i=0; i<data.length; i++){
+                    let row = data[i];
+                    let option = document.createElement('option');
+                    option.value = row['project_id'];
+                    option.innerHTML = row['project_name'];
+                    projects_option.appendChild(option);
+                }
+                resolve('success');
+            });
+        });
+    };
+    function get_employee(date){
+        return new Promise((resolve, reject) => {
+            fetch('/api/employee/?date='+date, {
+                method: 'get'
+            }).then(function(response){
+                return response.json();
+            }).then(function(data){
+                let employees_option = document.getElementById('employee_id');
+                employees_option.innerHTML = '<option></option>';
+                for(i=0; i<data.length; i++){
+                    let row = data[i];
+                    let option = document.createElement('option');
+                    option.value = row['employee_id'];
+                    option.innerHTML = row['name'];
+                    employees_option.appendChild(option);
+                }
+                resolve('success');
+            });
+        });
+    };
+
+    const records = document.getElementById('records');
+    function onlyUnique(value, index, self) {
+        return self.indexOf(value) === index;
+    }
+    var dtd = table.querySelectorAll('[name="classification"]')
+    var d = Array();
+    for(i=0; i<dtd.length; i++){
+        d.push(dtd[i].innerHTML)
+    };
+    d = d.filter(onlyUnique);
+    for(i=0; i<d.length; i++){
+        let option_ = document.createElement('option');
+        option_.value = d[i];
+        records.appendChild(option_);
+    }
+</script>
+
+{% endblock %}

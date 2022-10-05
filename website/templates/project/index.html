@@ -1,0 +1,595 @@
+{% extends "base.html" %}
+{% block title %}案場{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+            <div class="input-group">
+                <input type="text" id="tableSearchInput" class="form-control" placeholder="搜尋..." aria-label="table search" aria-describedby="tableSearch">
+                <button class="btn btn-primary" id="tableSearch">搜尋</button>
+            </div>
+            <button type="button" class="btn btn-primary" id="create_btn">+新增案場</button>
+        </div>
+        <div class="btn-toolbar justify-content-between mt-2" role="toolbar" aria-label="Toolbar with button groups">
+            <div>            
+                <select id="mode" class="form-select">
+                    <option value="all">所有案場</option>
+                    <option value="default">進行中</option>
+                </select> 
+            </div>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="dataTable">
+            <thead>
+                <tr>
+                    <th scope="col">案場</th>
+                    <th style="display:none;"></th>
+                    <th scope="col">地址</th>
+                    <th scope="col"><a href="/customer">業主</a></th>
+                    <th scope="col"><a href="/outsourcer">外包</a></th>
+                    <th scope="col">報價單</th>
+                    {% if admin %}
+                    <th scope="col">派工</th>
+                    <th scope="col">成本</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                <tr id="{{ project['project_id'] }}">
+                    <td name="project_name">{{ project['project_name'] }}</td>
+                    <td name="project_id" style="display:none;">{{ project['project_id'] }}</td>
+                    <td name="address">{{ project['address'] }}</td>
+                    <td name="customer_name">{{ project['customer_name'] }}</td>
+                    <td name="customer_id" style="display:none;">{{ project['customer_id'] }}</td>
+                    <td name="invoice" style="display:none;">{{ project['invoice']|string|lower }}</td>
+                    <td name="singing_date" style="display:none;">{{ project['singing_date'] }}</td>
+                    <td name="start_date" style="display:none;">{{ project['start_date'] }}</td>
+                    <td name="finish_date" style="display:none;">{{ project['finish_date'] }}</td>
+                    <td name="referrer" style="display:none;">{{ project['referrer'] if project['referrer'] else null }}</td>
+                    <td name="commision" style="display:none;">{{ project['commision'] }}</td>
+                    <td>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="外包,{{ project['project_id'] }}">
+                            <i class="fa-solid fa-right-from-bracket"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="報價單,{{ project['project_id'] }}">
+                            <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
+                        </button>
+                    </td>
+                    {% if admin %}
+                    <td>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="派工,{{ project['project_id'] }}">
+                            <i class="fas fa-clipboard" aria-hidden="true"></i>
+                        </button>
+                    </td>
+                    <td>
+                        <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="成本,{{ project['project_id'] }}">
+                            <i class="fa-solid fa-circle-dollar-to-slot"></i>
+                        </button>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- 報價單／派工 modal -->
+    <div class="modal fade" id="project_modal" tabindex="-1" aria-labelledby="project_modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="project_modalLabel">Modal title</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"></button>
+                    <button type="button" class="btn btn-primary"></button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 新增案場 modal -->
+    <div class="modal fade" id="projectModifyModal" tabindex="-1" aria-labelledby="projectModifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title" id="projectModifyModalLabel">新增案場</h5>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="project_name" class="form-label">案場名稱</label>
+                    <input class="form-control" id="project_name" required>
+                </div>
+                <div class="mb-3">
+                    <label for="address" class="form-label">地址</label>
+                    <input type="text" class="form-control" id="address" required>
+                </div>
+                <div class="mb-3">
+                    <label for="customer_id" class="form-label">業主</label>
+                    <select id="customer_id" class="form-select">
+                        
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="invoice" class="form-label">是否開發票</label>
+                    <select id="invoice" class="form-select">
+                        <option value="true">是</option>
+                        <option value="false">否</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="singing_date" class="form-label">簽約日期</label>
+                    <input type="date" class="form-control" id="singing_date" required>
+                </div>
+                <div class="mb-3">
+                    <label for="start_date" class="form-label">開工日期</label>
+                    <input type="date" class="form-control" id="start_date">
+                </div>
+                <div class="mb-3">
+                    <label for="finish_date" class="form-label">結束日期</label>
+                    <input type="date" class="form-control" id="finish_date">
+                </div>
+
+                <hr/>
+
+                <div class="mb-3">
+                    <label for="referrer" class="form-label">介紹人</label>
+                    <input type="text" class="form-control" id="referrer">
+                </div>
+                <div class="mb-3">
+                    <label for="commision" class="form-label">佣金</label>
+                    <input type="number" class="form-control" id="commision">
+                </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary" onclick="send()" data-bs-dismiss="modal" name="commit">送出</button>
+              <button type="button" class="btn btn-danger modifyButton" onclick="delete_project()" name="delete">刪除</button>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/table_serach.js') }}"></script>
+<script>
+    const modeSelector = document.getElementById('mode');
+    modeSelector.addEventListener('change', (event) => {
+        window.location.href = '/project/?mode='+event.target.value;
+    })
+    const mode = document.getElementById('mode');
+    mode.value = "{{ mode }}";
+
+
+    const projectModifyModal = document.getElementById('projectModifyModal')
+
+    // create new project
+    let create_btn = document.getElementById('create_btn');
+    create_btn.addEventListener('click', () => {
+        const modifyModal = new bootstrap.Modal('#projectModifyModal', {
+            keyboard: false
+        });
+        var modalTitle = projectModifyModal.querySelector('.modal-title');
+        modalTitle.innerHTML = '新增案場';
+        get_cusotmers();
+        let inputs = projectModifyModal.querySelectorAll('input');
+        for(pos=0; pos<inputs.length; pos++){
+            inputs[pos].value = '';
+        };
+        const commit_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="commit"]');
+        commit_btn.innerHTML = '送出';
+        commit_btn.setAttribute('onclick', 'send("post")');
+        const delete_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="delete"]');
+        delete_btn.setAttribute('onclick', '');
+        delete_btn.style.display = 'none';
+        modifyModal.show(projectModifyModal);
+    });
+ 
+    // show 報價單or派工
+    const project_modal = document.getElementById('project_modal')
+    project_modal.addEventListener('show.bs.modal', event => {
+        // Button that triggered the modal
+        const button = event.relatedTarget;
+        // Extract info from data-bs-* attributes
+        const recipient = button.getAttribute('data-bs-whatever');
+        const type_ = recipient.split(',')[0];
+        const project_id = recipient.split(',')[1];
+
+        const modalTitle = project_modal.querySelector('.modal-title');
+        modalTitle.textContent = document.getElementById(project_id).children[0].innerHTML + '・' + type_;
+        const modalBody = project_modal.querySelector('.modal-body');
+        modalBody.innerHTML = '';
+        const modalFooter = project_modal.querySelector('.modal-footer');
+        modalFooter.innerHTML = '';
+        switch (type_){
+            case '報價單':{
+                // 報價單modal
+                fetch('/api/projectDetails/'+project_id, {
+                    method: 'get',
+                    headers: new Headers({
+                        'Content-Type': 'application/json'
+                    })
+                }).then(function(response){
+                    return response.json();
+                }).then(function(data){
+                    let table = document.createElement('table');
+                    table.setAttribute('class', 'table table-bordered table-responsive');
+                    let thead = document.createElement('thead');
+                    let cols = ['項目', '數量 × 單價', '金額'];
+                    let tr = document.createElement('tr');
+                    for(i=0; i<cols.length; i++){
+                        let th = document.createElement('th');
+                        th.innerHTML = cols[i];
+                        th.setAttribute('scope', 'col');
+                        tr.appendChild(th);
+                    }
+                    thead.appendChild(tr);
+                    table.appendChild(thead);
+                    let tbody = document.createElement('tbody');
+                    let sum = 0
+                    for(pos=0; pos<data.length; pos++){
+                        let details = data[pos];
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${details['description']}</td><td>${details['quantity']}${details['unit']} × $${details['unit_price']}</td><td>$${details['price']}</td>`
+                        tbody.appendChild(tr);
+                        sum += details['price'];
+                    }
+                    table.appendChild(tbody);
+                    if(data.length !== 0){
+                        
+                        function tableFootCreate(){
+                            return new Promise((resolve, reject) => {
+                                let tfoot = document.createElement('tfoot');
+                                fetch('/api/project/'+project_id, {
+                                    method: 'get'
+                                }).then((response) => {
+                                    return response.json();
+                                }).then((projectData) => {
+                                    let total_ = sum
+                                    if(projectData['invoice']){
+                                        total_ *= 1.05;
+                                        let tr = document.createElement('tr');
+                                        tr.innerHTML = `<td colspan="2">營業稅 5%</td><td>$${sum*0.05}</td>`
+                                        tfoot.appendChild(tr);
+                                    };
+                                    if(total_ != projectData['account_receivable']){
+                                        let tr = document.createElement('tr');
+                                        tr.innerHTML = `<td colspan="2">折扣</td><td>$${total_ - projectData['account_receivable']}</td>`
+                                        tfoot.appendChild(tr);
+                                    }
+                                    let tr = document.createElement('tr');
+                                    tr.innerHTML = `<td colspan="2">總金額</td><td>$${projectData['account_receivable']}</td>`
+                                    tfoot.appendChild(tr);
+
+                                    resolve(tfoot);
+                                });
+                            })
+                        }
+                        async function f1(){
+                            let tfoot = await tableFootCreate();
+                            table.appendChild(tfoot);
+                        }
+                        f1();
+                        modalBody.appendChild(table);
+                    }else{
+                        modalBody.innerHTML = '目前沒有資料';
+                    }
+                });
+                modalFooter.innerHTML += `<a href="/project/details/${project_id}"><button type="button" class="btn btn-primary">新增/修改</button></a>`
+                // 報價單modal
+                break;
+            }
+            case '成本':{
+                // 成本
+                fetch('/api/projectCost/'+project_id, {
+                    method: 'get'
+                }).then((response) => {
+                    return response.json()
+                }).then((data) => {
+                    const labor = data['labor'];
+                    const matarial = data['matarial'];
+                    const outsourced = data['outsourced'];
+                    let totalCost = 0;
+                    function createTable(data, cols){
+                        let table = document.createElement('table');
+                        table.setAttribute('class', 'table table-bordered table-responsive');
+
+                        let thead = document.createElement('thead');
+                        let tr = document.createElement('tr');
+                        for(i=0; i<cols.length; i++){
+                            let th = document.createElement('th');
+                            th.innerHTML = cols[i];
+                            th.setAttribute('scope', 'col');
+                            tr.appendChild(th);
+                        }
+                        thead.appendChild(tr);
+
+                        let tbody = document.createElement('tbody');
+                        let sum_ = [0, 0]
+                        for(pos=0; pos<data.length; pos++){
+                            let items = data[pos];
+                            let tr = document.createElement('tr');
+                            for(item_pos=0; item_pos<Object.values(items).length; item_pos++){
+                                let td = document.createElement('td');
+                                let value = Object.values(items)[item_pos]
+                                value = Number(value) === value && value % 1 !== 0 ? Number(value.toFixed(2)):value;
+                                td.innerHTML = value;
+                                tr.appendChild(td);
+                                if(item_pos !== 0){
+                                    sum_[item_pos-1] += Number(value);
+                                }
+                            }
+                            tbody.appendChild(tr);
+                        }
+                        let tfoot = document.createElement('tfoot');
+                        tfoot.innerHTML = `
+                            <tr>
+                                <td>合計</td>
+                                <td>${sum_[0]}</td>
+                                <td>${sum_[1]}<//td>
+                            </tr>
+                        `
+                        table.appendChild(thead);
+                        table.appendChild(tbody);
+                        table.appendChild(tfoot);
+                        totalCost += sum_[1]
+                        if(sum_[0] !== 0 | sum_[1] !== 0){
+                            modalBody.appendChild(table);
+                        }
+                    }
+                    createTable(labor, ['人力成本', '工時', '金額']);
+                    createTable(matarial, ['材料成本', '用量', '成本']);
+                    createTable(outsourced, ['外包', '項目數', '金額']);
+                    const me = data['miscellaneous_expenditure'];
+                    if(me['total']){
+                        let p = document.createElement('p');
+                        p.innerHTML = `雜支: $${me['total']}`;
+                        totalCost += Number(me['total']);
+                        modalBody.appendChild(p);
+                    }
+                    const commision = data['commision'];
+                    if(commision['commision']){
+                        let p = document.createElement('p');
+                        p.innerHTML = `介紹費: $${commision['commision']} (${commision['referrer']})`;
+                        totalCost += Number(commision['commision']);
+                        modalBody.appendChild(p);
+                    }
+                    
+                    
+                    modalFooter.innerHTML = '總成本：$'+totalCost.toFixed(2)
+                })
+                // 成本
+                break;
+            }
+            case '外包':{
+                // 外包
+                fetch('/api/prejectOutsourced/'+project_id, {
+                    method: 'get'
+                }).then((response) => {
+                    return response.json();
+                }).then((data) => {
+                    let table = document.createElement('table');
+                    table.setAttribute('class', 'table table-bordered table-responsive');
+                    let thead = document.createElement('thead');
+                    let cols = ['廠商', '項目', '金額'];
+                    let tr = document.createElement('tr');
+                    for(i=0; i<cols.length; i++){
+                        let th = document.createElement('th');
+                        th.innerHTML = cols[i];
+                        th.setAttribute('scope', 'col');
+                        tr.appendChild(th);
+                    }
+                    thead.appendChild(tr);
+                    let tbody = document.createElement('tbody');
+                    let sum = 0
+                    for(pos=0; pos<data.length; pos++){
+                        let details = data[pos];
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `<td>${details['outsourcer_name']}</td><td>${details['description']}</td><td>$${details['price']}</td>`
+                        tbody.appendChild(tr);
+                        sum += details['price'];
+                    }
+                    if(sum !== 0){
+                        let tfoot = document.createElement('tfoot');
+                        let tr = document.createElement('tr');
+                        tr.innerHTML = `<td>總金額</td><td></td><td>$${sum}</td>`
+                        tfoot.appendChild(tr);
+
+                        table.appendChild(thead);
+                        table.appendChild(tbody);
+                        table.appendChild(tfoot);
+                        modalBody.appendChild(table);
+                    }else{
+                        modalBody.innerHTML = '目前沒有資料';
+                    }
+                });
+                modalFooter.innerHTML += `<a href="/project/outsourced/${project_id}"><button type="button" class="btn btn-primary">新增/修改</button></a>`
+                // 外包
+                break;
+            }
+            case '派工':{
+                // 派工modal
+                var now = new Date();
+                var month = (now.getMonth() + 1);               
+                var day = now.getDate();
+                if (month < 10) 
+                    month = "0" + month;
+                if (day < 10) 
+                    day = "0" + day;
+                var today = now.getFullYear() + '-' + month + '-' + day;
+                modalBody.innerHTML += `
+                    <div class="mb-3">
+                        <label for="date" class="form-label">日期</label>
+                        <input type="date" class="form-control" id="date" value="${today}" onchange="get_dispatchment('${project_id}')">
+                    </div>`
+                get_dispatchment(project_id)
+                modalFooter.innerHTML += `
+                    <a href="/project/dispatches/${project_id}"><button type="button" class="btn btn-primary">派工紀錄</button></a>
+                    <button type="button" class="btn btn-success" onclick="dispatch('${project_id}')">送出</button>
+                    `
+                // 派工modal
+                break;
+            }
+            default:{
+                console.log('no');
+            }
+        };
+    });
+    
+    // modify data
+    const all_data = document.getElementById('dataTable').querySelector('tbody').querySelectorAll('tr');
+    for(i=0; i<all_data.length; i++){
+        const row = all_data[i];
+        row.children[0].addEventListener('click', (event) => {
+            const btModal = new bootstrap.Modal('#projectModifyModal', {
+                keyboard: false
+            });
+            var modalTitle = projectModifyModal.querySelector('.modal-title');
+            modalTitle.innerHTML = '修改資料';
+            var modalBody = projectModifyModal.querySelector('.modal-body');
+            let inputs = projectModifyModal.querySelectorAll('input');
+            for(pos=0; pos<inputs.length; pos++){
+                inputs[pos].value = '';
+            };
+            
+            async function data_fillin(){
+                let get_ = await get_cusotmers();
+                const inputs_ = modalBody.querySelectorAll('input, select')
+                for(g=0; g<inputs_.length; g++){
+                    var item = inputs_[g];
+                    item.value = row.querySelector(`[name="${item.id}"]`).textContent;
+                };
+            }
+            const commit_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="commit"]');
+            commit_btn.innerHTML = '修改';
+            commit_btn.setAttribute('onclick', `send("put", "${event.target.parentElement.id}")`);
+            const delete_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="delete"]');
+            delete_btn.setAttribute('onclick', `delete_project("${event.target.parentElement.id}")`);
+            delete_btn.style.display = 'block';
+            data_fillin();
+            btModal.show(projectModifyModal);
+        });
+    }
+
+
+    // get list of customer
+    function get_cusotmers(){
+        return new Promise((resolve, reject) => {
+            let modal_ls_customer = document.getElementById('customer_id');
+            modal_ls_customer.innerHTML = '';
+
+            fetch('/api/customer/', {
+                method: 'get',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                })
+            }).then(function(response){
+                return response.json();
+            }).then(function(data){
+                for(i=0; i<data.length; i++){
+                    let customer_option = document.createElement('option');
+                    customer_option.setAttribute('value', data[i]['customer_id']);
+                    customer_option.innerHTML = data[i]['customer_name'];
+                    modal_ls_customer.appendChild(customer_option);
+                }
+                resolve('success');
+            });
+        });
+    }
+   
+    function get_dispatchment(project_id){
+        let date_e = document.getElementById('date');
+        const date = date_e.value;
+        date_e.setAttribute('type', 'text');
+        date_e.setAttribute('type', 'date');
+        
+        const project_modal = document.getElementById('project_modal')
+        const modalBody = project_modal.querySelector('.modal-body');
+        if(modalBody.children.length > 1){
+            modalBody.children[1].remove();
+        }
+
+        fetch(`/api/projectDispatch/${project_id}?date=${date}`, {
+            method: 'get',
+            headers: new Headers({
+                'Accept': 'application/json'
+            })
+        }).then(function(response){
+            return response.json();
+        }).then(function(data){
+            let col1 = document.createElement('div');
+            col1.setAttribute('class', 'col-6');
+            let col2 = document.createElement('div');
+            col2.setAttribute('class', 'col-6');
+            for(i=0; i<data.length; i++){
+                let employee = data[i];
+                
+                let checkbox = `\
+                    <div class="form-check">\
+                        <input class="form-check-input dispatch-item" type="checkbox" id="${employee['employee_id']}" ${employee['assigned']?'checked':''}>\
+                        <label class="form-check-label" for="${employee['employee_id']}">\
+                                ${employee['name']}\
+                        </label>\
+                    </div>\
+                    `
+                if(i%2 === 0){
+                    col1.innerHTML += checkbox
+                }else{
+                    col2.innerHTML += checkbox
+                }
+            }
+
+            let row = document.createElement('div');
+            let txt = document.createElement('p');
+            txt.innerHTML = "派工";
+            row.appendChild(txt);
+            
+            row.setAttribute('class', 'row');
+            row.appendChild(col1);
+            row.appendChild(col2);
+            modalBody.appendChild(row)                
+        });
+    };
+
+    function send(method, project_id=null){
+        let data = Object();
+        const inputs_ = projectModifyModal.querySelector('.modal-body').querySelectorAll('input, select')
+        for(g=0; g<inputs_.length; g++){
+            var item = inputs_[g];
+            var value = item.value;
+            value = value === "true"? true: value === "false"? false: value !== '' ? value.trim() : null;
+            data[item.id] = value;
+        };
+        if(method === 'post'){
+            requset_and_toast_alert('/api/project/', method, data, '登錄');
+        }else{
+            requset_and_toast_alert('/api/project/'+project_id, method, data, '修改');
+        }
+    };
+
+    function delete_project(project_id){
+        requset_and_toast_alert('/api/project/'+project_id, 'delete', {}, '刪除');
+    }
+
+    function dispatch(project_id){
+        const all_employee = document.getElementsByClassName('dispatch-item');
+        const date = document.getElementById('date').value;
+        for(pos=0; pos<all_employee.length; pos++){
+            const employee = all_employee[pos];
+            const employee_id = employee.getAttribute('id');
+            const assigned = employee.checked;
+            requset_and_toast_alert('/api/projectDispatch/'+project_id, 'put', {'employee_id': employee_id, 'date': date, 'assigned': assigned}, '派工', false);
+        }
+        
+    };
+</script>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends "base.html" %}
+{% block title %}薪資紀錄{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="col">
+            <h1 id="employee" employee_id="{{ employee['employee_id'] }}">{{ employee['name'] }}．薪資紀錄</h1>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="create_btn">+薪資調整</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="records">
+            <thead>
+              <tr>
+                <th scope="col">調整日期</th>
+                <th scope="col">薪資</th>
+                <th scope="col">薪資單位</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr sn="{{ record['sn'] }}">
+                    <td name="start_date">{{ record['start_date'] }}</td>
+                    <td name="salary">{{ record['salary'] }}</td>
+                    <td name="unit">{{ record['unit'] }}</td>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Matarial Using Modify Modal -->
+    <div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="modifyModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyModalLabel">{{ employee['name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="start_date">日期</label>
+                        <input type="date" class="form-control" id="start_date">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="salary">調整後薪資</label>
+                        <input type="number" class="form-control" id="salary">
+                    </div>
+                    <div class="mb-3">
+                        <label for="unit" class="form-label">薪資單位</label>
+                        <select id="unit" class="form-select">
+                            <option value="日">日</option>
+                            <option value="月">月</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">儲存</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+  </div>
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script>
+    function empty_all_input_value(){
+        let inputs = document.getElementsByTagName('input');
+        for(i=0; i<inputs.length; i++){
+            inputs[i].value = '';
+        };
+    };
+
+    const modifyModal = document.getElementById('modifyModal');
+    let create_btn = document.getElementById('create_btn');
+    create_btn.addEventListener('click', () => {
+        const modifyModalINNER = new bootstrap.Modal('#modifyModal', {
+            keyboard: false
+        });
+        empty_all_input_value();
+        modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = 'none';
+        modifyModalINNER.show(modifyModal);
+    });
+    
+    const rows = document.getElementsByTagName('tbody')[0].querySelectorAll('tr');
+    for(pos=0; pos<rows.length; pos++){
+        const row = rows[pos];
+        row.addEventListener('click', () => {
+            const modifyModalINNER = new bootstrap.Modal('#modifyModal', {
+                keyboard: false
+            });
+            empty_all_input_value();
+            for(g=0; g<row.children.length; g++){
+                let item = row.children[g]
+                document.getElementById(item.getAttribute('name')).value = item.innerHTML;
+            }
+            modifyModal.querySelector('.modal-body').setAttribute('sn', row.getAttribute('sn'));
+            modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = pos!==1 & rows[0] === row ? 'block' : 'none';
+            modifyModalINNER.show(modifyModal);
+        });
+    }
+
+
+    // commit
+    let modifyButtons = document.getElementsByClassName('modifyButton');
+    const employee_id = document.getElementById('employee').getAttribute('employee_id');
+    let modalBody = modifyModal.querySelector('.modal-body');
+    for(i=0; i<modifyButtons.length; i++){
+        let btn = modifyButtons[i];
+        btn.addEventListener('click', () => {
+            let data = Object();
+            if(btn.name === 'save'){
+                for(j=0; j<modalBody.querySelectorAll('input').length; j++){
+                    let input_item = modalBody.querySelectorAll('input')[j];
+                    data[`${input_item.id}`] = input_item.value
+                };
+                for(j=0; j<modalBody.querySelectorAll('select').length; j++){
+                    let input_item = modalBody.querySelectorAll('select')[j];
+                    data[`${input_item.id}`] = input_item.value
+                };
+                if(modalBody.getAttribute('sn')){
+                    data['sn'] = modalBody.getAttribute('sn');
+                }
+                requset_and_toast_alert(`/api/employeeSalary/${employee_id}`, 'put', data, '新增/修改');
+            }else if(btn.name === 'delete'){
+                if(modalBody.getAttribute('sn')){
+                    data['sn'] = modalBody.getAttribute('sn');
+                    requset_and_toast_alert(`/api/employeeSalary/${employee_id}`, 'delete', data, '刪除');
+                }
+            }
+        });
+    };
+
+</script>
+{% endblock %}

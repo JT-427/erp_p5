@@ -1,0 +1,188 @@
+{% extends "base.html" %}
+{% block title %}倉庫{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+          <div class="input-group">
+            <input type="text" id="tableSearchInput" class="form-control" placeholder="搜尋..." aria-label="table search" aria-describedby="tableSearch">
+            <button class="btn btn-primary" id="tableSearch">搜尋</button>
+          </div>
+          <button type="button" class="btn btn-primary" id="createButton">+新增供應商</button>
+        </div>
+        <div class="btn-toolbar justify-content-between mt-2" role="toolbar" aria-label="Toolbar with button groups">
+            <div>            
+              <select id="cooperating_mode" class="form-select">
+                  <option value="false">所有供應商</option>
+                  <option value="true">合作中</option>
+              </select>
+            </div>
+          </div>
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="dataTable">
+            <thead>
+              <tr>
+                <th scope="col">供應商</th>
+                <th scope="col">聯絡人</th>
+                <th scope="col">聯絡電話</th>
+                <th scope="col" style="display:none;">E-mail</th>
+                <th scope="col">備註</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for matarial_supplier in matarial_suppliers %}
+                <tr id="{{ matarial_supplier['matarial_supplier_id'] }}">
+                    <td name="matarial_supplier_name">{{ matarial_supplier['matarial_supplier_name'] }}</td>
+                    <td name="contact_person">{{ matarial_supplier['contact_person'] }}</td>
+                    <td name="contact_number">{{ matarial_supplier['contact_number'] }}</td>
+                    <td name="email" style="display:none;">{{ matarial_supplier['email'] if matarial_supplier['email'] else null }}</td>
+                    <td name="notes">{{ matarial_supplier['notes'] if matarial_supplier['notes'] else null }}</td>
+                    <td name="cooperating" style="display:none;">{{ matarial_supplier['cooperating']|string|lower }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <!-- add matarial_supplier modal -->
+    <div class="modal fade" id="modifyDataModal" tabindex="-1" aria-labelledby="modifyDataModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyDataModalLabel">新增供應商</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="matarial_supplier_name">供應商名稱</label>
+                        <input type="text" class="form-control" id="matarial_supplier_name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="contact_person">聯絡人</label>
+                        <input type="text" class="form-control" id="contact_person" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="contact_number">聯絡電話</label>
+                        <input type="text" class="form-control" id="contact_number" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="email">E-mail</label>
+                        <input type="email" class="form-control" id="email">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="notes">備註</label>
+                        <textarea type="text" class="form-control" id="notes"></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="cooperating">合作狀態</label>
+                        <select id="cooperating" class="form-select">
+                            <option value="true">合作中</option>
+                            <option value="false">停止合作</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">送出</button>
+                    <button type="button" class="btn btn-danger modifyButton" name="delete">刪除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/table_serach.js') }}"></script>
+<script>
+    const modeSelector = document.getElementById('cooperating_mode');
+    modeSelector.addEventListener('change', (event) => {
+        window.location.href = '/matarialSupplier/?cooperating='+event.target.value;
+    })
+    const cooperating = document.getElementById('cooperating_mode');
+    cooperating.value = "{{ cooperating }}".toLowerCase();
+
+    const content = 'matarial_supplier';
+    const chineseName = '倉庫';
+    // modal
+    const modal = document.getElementById('modifyDataModal');
+    const modalHeader = modal.querySelector('.modal-header');
+    const modalBody = modal.querySelector('.modal-body');
+    const modalFooter = modal.querySelector('.modal-footer');
+    // table
+    const table = document.getElementById('dataTable');
+    const tbody = table.querySelector('tbody');
+
+
+    // create
+    const create_btn = document.getElementById('createButton');
+    create_btn.addEventListener('click', () => {
+        const modifyDataModal = new bootstrap.Modal(`#modifyDataModal`, {
+            keyboard: false
+        });
+        let title = modal.querySelector('.modal-header').querySelector('h5');
+        title.innerHTML = '新增' + chineseName;
+
+        modalBody.removeAttribute(content + '_id');
+        const inputs_ = modal.querySelectorAll('input, select, textarea');
+        for(i=0; i<inputs_.length; i++){
+            inputs_[i].value = '';
+        }
+        document.getElementById('cooperating').disabled = true;
+        document.getElementById('cooperating').value = true;
+        modalFooter.querySelector('[name="delete"]').style.display = 'none';
+        modifyDataModal.show(modal);
+    });
+
+    // modify data
+    const data_row = tbody.querySelectorAll('tr');
+    for(i=0; i<data_row.length; i++){
+        let row = data_row[i];
+        row.addEventListener('click', () => {
+            const modifyDataModal = new bootstrap.Modal(`#modifyDataModal`, {
+                keyboard: false
+            });
+            // title
+            let title = modalHeader.querySelector('h5');
+            title.innerHTML = `更新${chineseName}資訊`;
+            // body
+            modalBody.setAttribute(content + '_id', row.getAttribute('id'));
+            for(g=0; g<row.children.length; g++){
+                let item = row.children[g];
+                let input_ = document.getElementById(item.getAttribute('name'));
+                if(input_){
+                    input_.value = item.innerHTML;
+                }
+            }
+            document.getElementById('cooperating').disabled = false;
+            // footer
+            modalFooter.querySelector('[name="delete"]').style.display = 'block';
+            modifyDataModal.show(modal);
+        });
+    }
+
+    const modifyButtons = document.getElementsByClassName('modifyButton');
+    for(i=0; i<modifyButtons.length; i++){
+        const btn = modifyButtons[i];
+        btn.addEventListener('click', (event) => {
+            let input_ = modalBody.querySelectorAll('input, select, textarea');
+            let data = Object();
+            for(g=0; g<input_.length; g++){
+                let item = input_[g];
+                var value = item.value;
+                value = value === "true"? true: value === "false"? false: value !== '' ? value.trim() : null;
+                data[item.id] = value;
+            }
+
+            const custom_id = modalBody.getAttribute(content + '_id');
+            if(custom_id !== null & event.target.name==='save'){
+                requset_and_toast_alert('/api/matarialSupplier/'+custom_id, 'put', data, '修改');
+            }else if(event.target.name==='save'){
+                requset_and_toast_alert('/api/matarialSupplier/', 'post', data, '新增');
+            }else if(event.target.name==='delete'){
+                requset_and_toast_alert('/api/matarialSupplier/'+custom_id, 'delete', {}, '刪除');
+            }
+        }) 
+    }
+</script>
+{% endblock %}

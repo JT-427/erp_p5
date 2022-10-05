@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+{% block title %}員工{% endblock %}
+
+{% block body %}
+<div class="container">
+  <div class="row mt-3">    
+    <div class="btn-toolbar justify-content-between" role="toolbar" aria-label="Toolbar with button groups">
+      <div class="input-group">
+        <input type="text" id="tableSearchInput" class="form-control" placeholder="搜尋..." aria-label="table search" aria-describedby="tableSearch">
+        <button class="btn btn-primary" id="tableSearch">搜尋</button>
+      </div>
+      <button type="button" class="btn btn-primary" id="create_btn">+新增員工</button>
+    </div>
+    <div class="btn-toolbar justify-content-between mt-2" role="toolbar" aria-label="Toolbar with button groups">
+      <div>            
+        <select id="mode" class="form-select">
+            <option value="all">所有員工</option>
+            <option value="default">在職中</option>
+        </select> 
+      </div>
+    </div>
+  </div>
+  <div class="row mt-3">
+    <table class="table table-bordered" style="vertical-align:middle;" id="dataTable">
+      <thead>
+        <tr>
+          <th scope="col">姓名</th>
+          <th scope="col">性別</th>
+          <th scope="col">生日</th>
+          <th scope="col">聯絡電話</th>
+          <th scope="col">住家地址</th>
+          <!-- <th scope="col">E-mail</th> -->
+          <th scope="col">薪資</th>
+          <th scope="col">上次調薪日</th>
+        </tr>
+      </thead>
+      <tbody>
+          {% for employee in employees %}
+          <tr class="data-row" id="{{ employee['employee_id'] }}" uid="{{ employee['user_id'] }}">
+              <th scope="row" name="name">{{ employee['name'] }}</th>
+              <td name="sex">{{ employee['sex'] }}</td>
+              <td name="birthday">{{ employee['birthday'] }}</td>
+              <td name="contact">{{ employee['contact'] }}</td>
+              <td name="address">{{ employee['address'] if employee['address'] else '' }}</td>
+              <!-- <td name="email">{{ employee['email'] if employee['email'] else '' }}</td> -->
+              <td><a href="/employee/salary-record/{{ employee['employee_id'] }}">{{ employee['salary'] }} / {{ employee['salary_unit'] }}</a></td>
+              <td>{{ employee['salary_start_date'] }}</td>
+          </tr>
+          {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="modal fade" id="employeeModifyModal" tabindex="-1" aria-labelledby="employeeModifyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="employeeModifyModalLabel">新進員工</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label for="name" class="form-label">姓名</label>
+            <input class="form-control" id="name" required>
+          </div>
+          <div class="mb-3">
+            <label for="sex" class="form-label">性別</label>
+            <select id="sex" class="form-select" required>
+              <option value="m">男</option>
+              <option value="f">女</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label for="birthday" class="form-label">生日</label>
+            <input type="date" class="form-control" id="birthday" required>
+          </div>
+          <div class="mb-3">
+            <label for="telephone" class="form-label">市話</label>
+            <input type="text" class="form-control" id="telephone">
+          </div>
+          <div class="mb-3">
+            <label for="cellphone" class="form-label">手機</label>
+            <input type="text" class="form-control" id="cellphone">
+          </div>
+          <div class="mb-3">
+            <label for="address" class="form-label">住家地址</label>
+            <input type="text" class="form-control" id="address">
+          </div>
+          <div class="mb-3">
+            <label for="email" class="form-label">E-mail</label>
+            <input type="text" class="form-control" id="email">
+          </div>
+          <div class="create_salary_part">
+            <hr>
+        
+            <div class="mb-3">
+              <label for="hired_date" class="form-label">入職日期</label>
+              <input type="date" class="form-control" id="hired_date" required>
+            </div>
+            <div class="mb-3">
+              <label for="salary" class="form-label">起薪</label>
+              <input type="number" class="form-control" id="salary" required>
+            </div>
+            <div class="mb-3">
+              <label for="salary_unit" class="form-label">薪水單位</label>
+                <select id="salary_unit" class="form-select">
+                  <option value="日">日</option>
+                  <option value="月">月</option>
+                </select>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <a href="">
+            <button type="button" class="btn btn-primary" id="payment_record">獎金紀錄</button>
+          </a>
+          <a href="">
+          <a href="">
+            <button type="button" class="btn btn-primary" id="hired_record">在職紀錄</button>
+          </a>
+          <a href="">
+            <button type="button" class="btn btn-primary" id="dispatch_record">出工紀錄</button>
+          </a>
+          <button type="button" class="btn btn-success" id="commit_btn" data-bs-dismiss="modal">送出</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
+<script type="text/javascript" src="{{ url_for('static', filename='js/table_serach.js') }}"></script>
+<script>
+  const modeSelector = document.getElementById('mode');
+  modeSelector.addEventListener('change', (event) => {
+      window.location.href = '/employee/?mode='+event.target.value;
+  })
+  const mode = document.getElementById('mode');
+  mode.value = "{{ mode }}";
+
+
+
+  const employeeModifyModal = document.getElementById('employeeModifyModal');
+  // create new project
+  let create_btn = document.getElementById('create_btn');
+  create_btn.addEventListener('click', () => {
+      const modifyModal = new bootstrap.Modal('#employeeModifyModal', {
+          keyboard: false
+      });
+      var modalTitle = employeeModifyModal.querySelector('.modal-title');
+      modalTitle.innerHTML = '新進員工';
+      let inputs = employeeModifyModal.querySelectorAll('input');
+      for(pos=0; pos<inputs.length; pos++){
+          inputs[pos].value = '';
+      };
+      document.getElementById('birthday').value = '1970-01-01';
+      document.getElementById('commit_btn').setAttribute('onclick', `commit('post')`);
+      document.getElementById('dispatch_record').style.display = 'none';
+      document.getElementById('hired_record').style.display = 'none';
+      document.getElementById('payment_record').style.display = 'none';
+
+      employeeModifyModal.querySelector('.create_salary_part').style.display = 'block';
+      modifyModal.show(employeeModifyModal);
+  });
+
+  // modify data
+  const all_data = document.getElementById('dataTable').querySelector('tbody').querySelectorAll('tr');
+  for(i=0; i<all_data.length; i++){
+    const row = all_data[i];
+    row.children[0].addEventListener('click', (event) => {
+        const modifyModal = new bootstrap.Modal('#employeeModifyModal', {
+          keyboard: false
+        });
+        var modalTitle = employeeModifyModal.querySelector('.modal-title');
+        modalTitle.innerHTML = `詳細資料 (編號：${row.getAttribute('uid')})`;
+        let modalBody = employeeModifyModal.querySelector('.modal-body');
+        let inputs = employeeModifyModal.querySelectorAll('input');
+        for(pos=0; pos<inputs.length; pos++){
+          inputs[pos].value = '';
+        };
+        const employee_id = event.target.parentElement.id;
+        fetch('/api/employee/' + employee_id, {
+          method: 'get',
+          headers: new Headers({
+            'Content-Type': 'application/json'
+          })
+        }).then(function(response){
+          return response.json()
+        }).then(function(data){
+          for(g=0; g<Object.keys(data).length; g++){
+            let key = Object.keys(data)[g];
+            let item = document.getElementById(key);
+            item.value = data[key];
+          };
+        });
+        
+        let commit_btn = document.getElementById('commit_btn');
+        commit_btn.setAttribute('onclick', `commit('put', '${employee_id}')`);
+        let dispatch_record_btn = document.getElementById('dispatch_record');
+        dispatch_record_btn.parentElement.setAttribute('href', `/employee/dispatch-record/${employee_id}`)
+        dispatch_record_btn.style.display = 'block';
+        let hired_record_btn = document.getElementById('hired_record');
+        hired_record_btn.parentElement.setAttribute('href', `/employee/hired-record/${employee_id}`)
+        hired_record_btn.style.display = 'block';
+        let payment_record_btn = document.getElementById('payment_record');
+        payment_record_btn.parentElement.setAttribute('href', `/employee/payment-record/${employee_id}`)
+        payment_record_btn.style.display = 'block';
+
+        modalBody.querySelector('.create_salary_part').style.display = 'none';
+        modifyModal.show(employeeModifyModal);
+    });
+  }
+
+  function commit(type, employee_id=null){
+    let data ={
+      name: document.getElementById('name').value.trim(),
+      sex: document.getElementById('sex').value,
+      birthday: document.getElementById('birthday').value,
+      telephone: document.getElementById('telephone').value.trim(),
+      cellphone: document.getElementById('cellphone').value.trim(),
+      address: document.getElementById('address').value.trim(),
+      email: document.getElementById('email').value.trim()
+    }
+    if(type === 'post'){
+      data['hired_date'] = document.getElementById('hired_date').value
+      data['salary'] = document.getElementById('salary').value.trim()
+      data['salary_unit'] = document.getElementById('salary_unit').value
+      requset_and_toast_alert('/api/employee/', 'post', data, '登錄');
+    }else{
+      requset_and_toast_alert('/api/employee/' + employee_id, 'put', data, '修改');
+    }
+  }
+</script>
+{% endblock %}

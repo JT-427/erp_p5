@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}材料使用紀錄{% endblock %}
+
+{% block body %}
+<div class="container">
+    <div class="row mt-3">    
+        <div class="col">
+            <h1 id="matarial" matarial_id="{{ matarial['matarial_id'] }}">{{ matarial['matarial_name'] }}． 轉移紀錄</h1>
+        </div>
+        <!-- <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="create_btn">+使用材料</button>
+        </div> -->
+    </div>
+    <div class="row mt-3">
+        <table class="table table-bordered" style="vertical-align:middle;" id="records">
+            <thead>
+              <tr>
+                <th scope="col">日期</th>
+                <th scope="col">轉出倉庫</th>
+                <th scope="col">轉入倉庫</th>
+                <th scope="col">量</th>
+              </tr>
+            </thead>
+            <tbody>
+                {% for record in records %}
+                <tr sn="{{ record['sn'] }}">
+                    <td>{{ record['date'] }}</td>
+                    <td>{{ record['storehouse_name_from'] }}</td>
+                    <td>{{ record['storehouse_name_to'] }}</td>
+                    <td>{{ record['quantity'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    
+</div>
+
+{% endblock %}
