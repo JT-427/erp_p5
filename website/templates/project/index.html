@@ -27,8 +27,8 @@
                     <th scope="col">案場</th>
                     <th style="display:none;"></th>
                     <th scope="col">地址</th>
-                    <th scope="col"><a href="/customer">業主</a></th>
-                    <th scope="col"><a href="/outsourcer">外包</a></th>
+                    <th scope="col"><a href="/customer/">業主</a></th>
+                    <th scope="col"><a href="/outsourcer/">外包</a></th>
                     <th scope="col">報價單</th>
                     {% if admin %}
                     <th scope="col">派工</th>
@@ -44,6 +44,8 @@
                     <td name="address">{{ project['address'] }}</td>
                     <td name="customer_name">{{ project['customer_name'] }}</td>
                     <td name="customer_id" style="display:none;">{{ project['customer_id'] }}</td>
+                    <td name="company_name" style="display:none;">{{ project['company_name'] }}</td>
+                    <td name="company_id" style="display:none;">{{ project['company_id'] }}</td>
                     <td name="invoice" style="display:none;">{{ project['invoice']|string|lower }}</td>
                     <td name="singing_date" style="display:none;">{{ project['singing_date'] }}</td>
                     <td name="start_date" style="display:none;">{{ project['start_date'] }}</td>
@@ -121,6 +123,12 @@
                     </select>
                 </div>
                 <div class="mb-3">
+                    <label for="company_id" class="form-label">公司</label>
+                    <select id="company_id" class="form-select">
+                        
+                    </select>
+                </div>
+                <div class="mb-3">
                     <label for="invoice" class="form-label">是否開發票</label>
                     <select id="invoice" class="form-select">
                         <option value="true">是</option>
@@ -129,7 +137,7 @@
                 </div>
                 <div class="mb-3">
                     <label for="singing_date" class="form-label">簽約日期</label>
-                    <input type="date" class="form-control" id="singing_date" required>
+                    <input type="date" class="form-control" id="singing_date">
                 </div>
                 <div class="mb-3">
                     <label for="start_date" class="form-label">開工日期</label>
@@ -181,6 +189,7 @@
         var modalTitle = projectModifyModal.querySelector('.modal-title');
         modalTitle.innerHTML = '新增案場';
         get_cusotmers();
+        get_company();
         let inputs = projectModifyModal.querySelectorAll('input');
         for(pos=0; pos<inputs.length; pos++){
             inputs[pos].value = '';
@@ -372,7 +381,7 @@
             }
             case '外包':{
                 // 外包
-                fetch('/api/prejectOutsourced/'+project_id, {
+                fetch('/api/projectOutsourced/'+project_id, {
                     method: 'get'
                 }).then((response) => {
                     return response.json();
@@ -463,6 +472,7 @@
             
             async function data_fillin(){
                 let get_ = await get_cusotmers();
+                let company_ = await get_company();
                 const inputs_ = modalBody.querySelectorAll('input, select')
                 for(g=0; g<inputs_.length; g++){
                     var item = inputs_[g];
@@ -500,6 +510,30 @@
                     customer_option.setAttribute('value', data[i]['customer_id']);
                     customer_option.innerHTML = data[i]['customer_name'];
                     modal_ls_customer.appendChild(customer_option);
+                }
+                resolve('success');
+            });
+        });
+    }
+    // get list of company
+    function get_company(){
+        return new Promise((resolve, reject) => {
+            let modal_ls_customer = document.getElementById('company_id');
+            modal_ls_customer.innerHTML = '';
+
+            fetch('/api/company/', {
+                method: 'get',
+                headers: new Headers({
+                    'Content-Type': 'application/json'
+                })
+            }).then(function(response){
+                return response.json();
+            }).then(function(data){
+                for(i=0; i<data.length; i++){
+                    let option = document.createElement('option');
+                    option.setAttribute('value', data[i]['company_id']);
+                    option.innerHTML = data[i]['company_name'];
+                    modal_ls_customer.appendChild(option);
                 }
                 resolve('success');
             });
@@ -563,16 +597,25 @@
     function send(method, project_id=null){
         let data = Object();
         const inputs_ = projectModifyModal.querySelector('.modal-body').querySelectorAll('input, select')
+        let filled = true;
         for(g=0; g<inputs_.length; g++){
             var item = inputs_[g];
             var value = item.value;
+            if(item.getAttribute('required') !== null & (value === "" | value === null)){
+                filled = false;
+                break;
+            }
             value = value === "true"? true: value === "false"? false: value !== '' ? value.trim() : null;
             data[item.id] = value;
         };
-        if(method === 'post'){
-            requset_and_toast_alert('/api/project/', method, data, '登錄');
+        if(filled){
+            if(method === 'post'){
+                requset_and_toast_alert('/api/project/', method, data, '登錄');
+            }else{
+                requset_and_toast_alert('/api/project/'+project_id, method, data, '修改');
+            }
         }else{
-            requset_and_toast_alert('/api/project/'+project_id, method, data, '修改');
+            toast_alert('fail', '未填寫'+item.parentElement.children[0].innerHTML, false);
         }
     };
 

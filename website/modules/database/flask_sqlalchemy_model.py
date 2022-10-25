@@ -222,8 +222,8 @@ class MatarialRemainingAdjustmentRecord(db.Model):
 class MatarialSupplier(db.Model):
     matarial_supplier_id = db.Column(db.String(32), primary_key=True)
     matarial_supplier_name = db.Column(db.String(50), nullable=False) 
-    contact_person = db.Column(db.String(10))
-    contact_number = db.Column(db.String(10))
+    contact_person = db.Column(db.String(30))
+    contact_number = db.Column(db.String(30))
     email = db.Column(db.String(50))
     notes = db.Column(db.String(50))
     cooperating = db.Column(db.Boolean, default=True, nullable=False)
@@ -257,9 +257,9 @@ class Outsourcer(db.Model):
     outsourcer_title = db.Column(db.String(50))
     address = db.Column(db.String(50))
     tax_id_num = db.Column(db.Integer)
-    contact_person = db.Column(db.String(10))
-    contact_number = db.Column(db.String(10))
-    fax = db.Column(db.String(10))
+    contact_person = db.Column(db.String(30))
+    contact_number = db.Column(db.String(30))
+    fax = db.Column(db.String(30))
     email = db.Column(db.String(50))
     invoice_date = db.Column(db.String(20)) # 請款日
     drawdown_date = db.Column(db.String(20)) # 放款日
@@ -270,15 +270,15 @@ class Outsourcer(db.Model):
     
 
 class Customer(db.Model):
-    # 客戶
+    # 業主
     customer_id = db.Column(db.String(32), primary_key=True)
     customer_name = db.Column(db.String(50), nullable=False)
     customer_title = db.Column(db.String(50), nullable=False)
     address = db.Column(db.String(50))
     tax_id_num = db.Column(db.Integer)
-    contact_person = db.Column(db.String(10))
-    contact_number = db.Column(db.String(10))
-    fax = db.Column(db.String(10)) # 傳真
+    contact_person = db.Column(db.String(30))
+    contact_number = db.Column(db.String(30))
+    fax = db.Column(db.String(30)) # 傳真
     email = db.Column(db.String(50))
     invoice_date = db.Column(db.String(20)) # 請款日
     drawdown_date = db.Column(db.String(20)) # 放款日
@@ -293,11 +293,12 @@ class Project(db.Model):
     project_name = db.Column(db.String(10), nullable=False)
     address = db.Column(db.String(50), nullable=False)
     invoice = db.Column(db.Boolean, default=True, nullable=False)
-    singing_date = db.Column(db.Date, nullable=False)
+    singing_date = db.Column(db.Date)
     start_date = db.Column(db.Date)
     finish_date = db.Column(db.Date)
     customer_id = db.Column(db.String(32), db.ForeignKey('customer.customer_id'), nullable=False)
     account_receivable = db.Column(db.Float, default=0, nullable=False)
+    company_id = db.Column(db.String(32), db.ForeignKey('company.company_id'), nullable=False)
     referrer = db.Column(db.String(10))
     commision = db.Column(db.Float)
 
@@ -333,7 +334,6 @@ class ProjectLabor(db.Model):
     date = db.Column(db.Date, primary_key=True)
     assigned = db.Column(db.Boolean, nullable=False)
     working_days = db.Column(db.Float)
-    had_paid_or_not = db.Column(db.Boolean, nullable=False)
 
 class ProjectOutsourced(db.Model):
     sn = db.Column(db.Integer, primary_key=True)
@@ -343,14 +343,30 @@ class ProjectOutsourced(db.Model):
     price = db.Column(db.Float, nullable=False)
     date = db.Column(db.Date, nullable=False)
     notes = db.Column(db.String(100))
-    
+
+    __table_args__ = (
+        CheckConstraint(price >= 0),
+    )
+
+class ProjectPayment(db.Model):
+    # 收款紀錄
+    sn = db.Column(db.Integer, primary_key=True)
+    project_id = db.Column(db.String(32), db.ForeignKey('project.project_id'), nullable=False)
+    date = db.Column(db.Date)
+    amount = db.Column(db.Float, nullable=False)
+    notes = db.Column(db.String(50))
+
+    __table_args__ = (
+        CheckConstraint(amount >= 0),
+    )
+
 class MiscellaneousExpenditure(db.Model):
     # 雜支
     sn = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.Date)
     employee_id = db.Column(db.String(32), db.ForeignKey('employee.employee_id'))
     project_id = db.Column(db.String(32), db.ForeignKey('project.project_id'))
-    description = db.Column(db.String(50), nullable=False)
+    description = db.Column(db.String(50))
     classification = db.Column(db.String(15), nullable=False)
     price = db.Column(db.Float, nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('users.user_id'), nullable=False)
@@ -358,3 +374,20 @@ class MiscellaneousExpenditure(db.Model):
     __table_args__ = (
         CheckConstraint(price >= 0),
     )
+
+class Company(db.Model):
+    # 自己的公司
+    company_id = db.Column(db.String(32), primary_key=True)
+    company_name = db.Column(db.String(30), nullable=False)
+    address = db.Column(db.String(50))
+    postal_address = db.Column(db.String(50))
+    tax_id_num = db.Column(db.Integer)
+    fax = db.Column(db.String(30))
+    responsible_person = db.Column(db.String(10))
+    contact_person = db.Column(db.String(30))
+    contact_number = db.Column(db.String(30))
+    create_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date)
+    notes = db.Column(db.String(100))
+
+    Project = db.relationship('Project', backref='Company', lazy='select')

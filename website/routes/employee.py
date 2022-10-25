@@ -34,8 +34,9 @@ def salary(employee_id):
 @check_authority
 def dispatch(employee_id):
     employee = EmployeeC(employee_id)
-    records = employee.get_dispatches()
-    return render_template('employee/dispatch.html', employee=employee, records=records, user=current_user)
+    records = employee.get_dispatches(year=dt.date.today().year, month=dt.date.today().month)
+    summation = (sum([i['working_days'] for i in records]), sum([i['accounts_payable'] for i in records]))
+    return render_template('employee/dispatch.html', employee=employee, records=records, summation=summation, user=current_user)
 
 @employee.route("/hired-record/<employee_id>", methods=['GET'])
 @login_required
@@ -47,7 +48,7 @@ def hired(employee_id):
 
 @employee.route("/payment-record/<employee_id>", methods=['GET'])
 @login_required
-# @check_authority
+@check_authority
 def payment(employee_id):
     employee = EmployeeC(employee_id)
     records = employee.get_payment_record()

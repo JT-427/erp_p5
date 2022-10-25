@@ -1,6 +1,6 @@
 function requset_and_toast_alert(url, method, form_data, message, reload=true){
   fetch(url, {
-    method: method,
+    method: method.toUpperCase(),
     body: JSON.stringify(form_data),
     headers: new Headers({
         'Content-Type': 'application/json'

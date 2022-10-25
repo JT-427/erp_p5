@@ -82,7 +82,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="reDir()">調整記錄</button>
+                    <!-- <button type="button" class="btn btn-primary" onclick="reDir('adjust')">調整記錄</button> -->
                     <button type="button" class="btn btn-success" onclick="submitAdjustment()">送出</button>
                 </div>
             </div>
@@ -116,7 +116,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" onclick="reDir()">轉移記錄</button>
+                    <button type="button" class="btn btn-primary" onclick="reDir('transfer')">轉移記錄</button>
                     <button type="button" class="btn btn-success" onclick="submitTransfer()">送出</button>
                 </div>
             </div>
@@ -255,7 +255,8 @@
             });
             const matarial_id = event.target.parentNode.id;
             let thisModalFooter = thisModal.querySelector('.modal-footer');
-            thisModalFooter.children[1].setAttribute('onclick', `submitAdjustment('${matarial_id}')`)
+            thisModalFooter.children[0].setAttribute('onclick', `submitAdjustment('${matarial_id}')`)
+            thisModalBody.setAttribute('matarial_id', matarial_id);
             matarialRemainingAdjustmentModal.show(thisModal);
         })
     }
@@ -290,10 +291,14 @@
         }
         requset_and_toast_alert('/api/matarial/transfer/'+ matarial_id, 'put', data, '新增')
     }
-    function reDir(){
-        const matarialTransferModalBody = matarialTransferModal.querySelector('.modal-body');
-        const matarial_id = matarialTransferModalBody.getAttribute('matarial_id');
-        window.location.href = '/matarial/transfer?matarial_id='+matarial_id;
+    function reDir(type){
+        if(type === 'transfer'){
+            const matarialTransferModalBody = matarialTransferModal.querySelector('.modal-body');
+            const matarial_id = matarialTransferModalBody.getAttribute('matarial_id');
+            window.location.href = '/matarial/transfer?matarial_id='+matarial_id;
+        }else if(type === 'adjust'){
+
+        }
     }
 
     function submitAdjustment(matarial_id){

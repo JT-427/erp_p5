@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from flask_login import current_user
 
 from .. import db
-from ..modules.database.flask_sqlalchemy_model import Customer, Matarial, MatarialUsingRecord, MatarialBuyingRecord, MiscellaneousExpenditure, Outsourcer, Project, ProjectDetail, ProjectLabor, ProjectOutsourced, Employee, HiredRecord, Salary
+from ..modules.database.flask_sqlalchemy_model import Company, Customer, Matarial, MatarialUsingRecord, MatarialBuyingRecord, MiscellaneousExpenditure, Outsourcer, Project, ProjectDetail, ProjectLabor, ProjectOutsourced, Employee, HiredRecord, ProjectPayment, Salary
 class ProjectC:
     def __init__(self, project_id:str=None) -> None:
         if project_id:
@@ -30,11 +30,15 @@ class ProjectC:
             Project.finish_date,
             Project.customer_id,
             Project.account_receivable,
+            Project.company_id,
             Project.referrer,
             Project.commision,
-            Customer.customer_name
+            Customer.customer_name,
+            Company.company_name
         ).join(
             Customer
+        ).join(
+            Company
         ).filter(
             Project.project_id == self.project_id
         ).first()
@@ -136,8 +140,6 @@ class ProjectC:
             pl.c.assigned
         ).join(
             HiredRecord
-        ).join(
-            Salary
         ).outerjoin(
             pl
         ).filter(
@@ -145,8 +147,7 @@ class ProjectC:
             or_(
                 HiredRecord.resigned_date == null(),
                 HiredRecord.resigned_date >= date,
-            ),
-            Salary.unit == '日'
+            )
         ).all()
         return query
     @check_id
@@ -186,7 +187,7 @@ class ProjectC:
             db.session.commit()
         else:
             if assigned:
-                assignment = ProjectLabor(project_id=project_id, employee_id=employee_id, date=date, assigned=True, had_paid_or_not=0)
+                assignment = ProjectLabor(project_id=project_id, employee_id=employee_id, date=date, assigned=True)
                 db.session.add(assignment)
                 db.session.commit()
     @check_id
@@ -261,7 +262,11 @@ class ProjectC:
                 ProjectLabor.working_days
             ).label("working_days"),
             func.sum(
-                ProjectLabor.working_days * Salary.salary
+                func.IF(
+                    Salary.unit == '日',
+                    ProjectLabor.working_days * Salary.salary,
+                    ProjectLabor.working_days * Salary.salary/30
+                )
             ).label("payment")
         ).filter(
             ProjectLabor.project_id == project_id
@@ -344,13 +349,46 @@ class ProjectC:
             'commision': commision
         }
 
+    def get_payment(self):
+        query = db.session.query(
+            ProjectPayment
+        ).filter(
+            ProjectPayment.project_id == self.project_id
+        ).all()
+        return query
+    def modify_payment(self, **kwargs):
+        kwargs['project_id'] = self.project_id
+        if 'sn' in kwargs and bool(kwargs['sn']) == True:
+            sn = kwargs['sn']
+            del kwargs['sn']
+            db.session.query(
+                ProjectPayment
+            ).filter(
+                ProjectPayment.project_id == self.project_id,
+                ProjectPayment.sn == sn
+            ).update(kwargs)
+        else:
+            new = ProjectPayment(**kwargs)
+            db.session.add(new)
+        db.session.commit()
+        return ''
+    def delete_payment(self, sn):
+        db.session.query(
+            ProjectPayment
+        ).filter(
+            ProjectPayment.project_id == self.project_id,
+            ProjectPayment.sn == sn
+        ).delete()
+        db.session.commit()
+        return ''
+
     def create(self, **kwargs):
         new = Project(**kwargs)
 
         def id_gen():
             a = new.customer_id[-10:] # 10
             b = hex(random.randint(16**6+1, 16**7))[2:] # 7
-            d = oct(int(dt.datetime.strptime(kwargs["singing_date"], '%Y-%m-%d').date().strftime('%Y%m%d')))[2:]
+            d = oct(int(dt.date.today().strftime('%Y%m%d')))[2:]
             lef = a + b + d
             e = hex(random.randint(16**(32-len(lef)-1)+1, 16**(32 - len(lef))))[2:]
             return lef + e
@@ -408,11 +446,15 @@ class ProjectC:
             Project.start_date,
             Project.finish_date,
             Project.customer_id,
+            Project.company_id,
             Project.referrer,
             Project.commision,
-            Customer.customer_name
+            Customer.customer_name,
+            Company.company_name
         ).join(
             Customer
+        ).join(
+            Company
         ).filter(
             or_(date=='', Project.singing_date <= date),
             or_(date=='', Project.finish_date==null(), Project.finish_date >= date)

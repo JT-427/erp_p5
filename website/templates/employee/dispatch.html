@@ -1,15 +1,14 @@
 {% extends "base.html" %}
 {% block title %}出工紀錄{% endblock %}
-
 {% block body %}
 <div class="container">
     <div class="row mt-3">
         <h1 id="employee" employee_id="{{ employee['employee_id'] }}">{{ employee['name'] }}．出工紀錄</h1>
-        <!-- <div class="row">
+        <div class="row">
             <div class="col-6">
                 <label for="year" class="form-label">年</label>
                 <select class="form-select" id="year">
-                    <option>2022</option>
+                    <!-- <option>2022</option> -->
                 </select>
             </div>
             <div class="col-6">
@@ -29,8 +28,10 @@
                     <option value="12">12</option>
                 </select>
             </div>
-        </div> -->
-
+        </div>
+        <div class="mt-3 text-center">
+            <button type="button" class="btn btn-primary" id="pay_btn">+給薪</button>
+        </div>
     </div>
     <div class="row mt-3">
         <table class="table table-bordered table-hover" style="vertical-align:middle;" id="records">
@@ -39,6 +40,8 @@
                 <th scope="col">日期</th>
                 <th scope="col">派工案場</th>
                 <th scope="col">實際工時</th>
+                <th scope="col">應付</th>
+                <!-- <th scope="col">已付</th> -->
               </tr>
             </thead>
             <tbody>
@@ -47,12 +50,23 @@
                     <td name="date">{{ record['date'] }}</td>
                     <td name="project_name">{{ record['project_name'] }}</td>
                     <td name="working_days">{{ "%.2f"|format(record['working_days']) if record['working_days'] else null }}</td>
+                    <td name="accounts_payable">{{ "%.2f"|format(record['accounts_payable']) if record['accounts_payable'] else null }}</td>
+                    <!-- <td name="had_paid_or_not">{{ "是" if record['had_paid_or_not'] else "否" }}</td> -->
+                </tr>
                 {% endfor %}
             </tbody>
+            <tfoot>
+                <tr>
+                    <td colspan="2">總和</td>
+                    <td>{{ summation[0] }}</td>
+                    <td>{{ summation[1] }}</td>
+                    <!-- <td></td> -->
+                </tr>
+            </tfoot>
         </table>
     </div>
 
-    <!-- Matarial Using Modify Modal -->
+    <!-- Modify Modal -->
     <div class="modal fade" id="modifyModal" tabindex="-1" aria-labelledby="modifyModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -81,38 +95,111 @@
         </div>
     </div>
 
+    <!-- Pay Modal -->
+    <div class="modal fade" id="payModal" tabindex="-1" aria-labelledby="payModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="payModalLabel">{{ employee['name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="date">日期</label>
+                        <input type="date" class="form-control" id="date">
+                    </div>
+                    <div class="mb-3" id="accounts_payable">
+                        
+                    </div>
+                    <div class="mb-3">
+                        <label for="payment" class="form-label">實付金額</label>
+                        <input type="number" class="form-control" id="payment">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary modifyButton" name="save">送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
   </div>
 </div>
 <script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
 <script>
-    // const yearSelector = document.getElementById('year');
-    // const monthSelector = document.getElementById('month');
-    // const today = new Date(2023, 5, 17);
-    // const todayM = today.getMonth() + 1; //January is 0!
-    // const todayY = today.getFullYear();
-    // let year = todayY;
-    // while (year > 2021){
-    //     var option_ = document.createElement('option');
-    //     option_.value = year;
-    //     option_.innerHTML = year;
-    //     yearSelector.appendChild(option_);
-    //     year -= 1;
-    // };
-    // yearSelector.value = todayY;
-    // monthSelector.value = todayM;
+    const employee_id = "{{ employee['employee_id'] }}";
 
-    // yearSelector.addEventListener('change', (event) => {
-    //     if(event.target.value != todayY){
-    //         monthSelector.value = 12;
-    //     }
-    // });
-    // monthSelector.addEventListener('change', (event) => {
+    const yearSelector = document.getElementById('year');
+    const monthSelector = document.getElementById('month');
+    const today = new Date();
+    if(today.getDate() < 11){
+        if(today.getMonth() === 0){
+            var todayM = 12;
+            var todayY = today.getFullYear() - 1;
+        }else{
+            var todayM = today.getMonth();
+            var todayY = today.getFullYear();
+        }
+    }else{
+        var todayM = today.getMonth() + 1;
+        var todayY = today.getFullYear();
+    }
+    for(i=2022; i<=todayY; i++){
+        let option_ = document.createElement('option');
+        option_.value = i;
+        option_.innerHTML = i;
+        yearSelector.appendChild(option_);
+    }
 
-    // })
+    yearSelector.value = todayY;
+    monthSelector.value = todayM;
 
+    yearSelector.addEventListener('change', () => {
+        get_dispatches();
+    });
+    monthSelector.addEventListener('change', () => {
+        get_dispatches();
+    });
 
+    function get_dispatches(){
+        fetch(`/api/employeeDispatch/${employee_id}/${yearSelector.value}/${monthSelector.value}`, {
+            'method': 'get'
+        }).then((response) => {
+            return response.json()
+        }).then((data) => {
+            const table = document.getElementById('records');
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+            let summation = [0, 0];
+            for(i=0; i<data.length; i++){
+                tbody.innerHTML += `
+                    <tr sn="${data[i]['sn']}">
+                        <td name="date">${data[i]['date']}</td>
+                        <td name="project_name">${data[i]['project_name']}</td>
+                        <td name="working_days">${data[i]['working_days'] === null ? '': data[i]['working_days']}</td>
+                        <td name="accounts_payable">${data[i]['accounts_payable'] === null ? '': data[i]['accounts_payable']}</td>
+                    </tr>
+                `;
+                if(data[i]['working_days'] !== null){
+                    summation[0] += data[i]['working_days']
+                }
+                if(data[i]['accounts_payable'] !== null){
+                    summation[1] += data[i]['accounts_payable']
+                }
+            }
+            const tfoot = table.querySelector('tfoot');
+            tfoot.innerHTML = `
+                <tr>
+                    <td colspan="2">總和</td>
+                    <td>${summation[0]}</td>
+                    <td>${summation[1]}</td>
+                    <td></td>
+                </tr>
+            `;
+
+        });
+    };
     
-
     function empty_all_input_value(){
         let inputs = document.getElementsByTagName('input');
         for(i=0; i<inputs.length; i++){
@@ -130,10 +217,10 @@
                 keyboard: false
             });
             empty_all_input_value();
-            fetch(`/api/employeeDispatch/${employee_id}?date=${row.querySelector('[name="date"]').innerHTML}`, {
+            fetch(`/api/employeeDispatch/${employee_id}/${row.querySelector('[name="date"]').innerHTML}`, {
                 'method': 'get'
             }).then((response) => {
-                return response.json()  
+                return response.json()
             }).then((data) => {
                 let col1 = document.createElement('div');
                 col1.setAttribute('class', 'col-6');
@@ -183,15 +270,12 @@
 
     // commit
     let modifyButtons = document.getElementsByClassName('modifyButton');
-    const employee_id = document.getElementById('employee').getAttribute('employee_id');
     let modalBody = modifyModal.querySelector('.modal-body');
     for(i=0; i<modifyButtons.length; i++){
         let btn = modifyButtons[i];
         btn.addEventListener('click', () => {
             var date = document.getElementById('date').value;
-            var data = {
-                'date': date
-            }
+            var data = Object();
             if(btn.name === 'save'){
                 var working_days = document.getElementById('working_days').value;
                 let projects = document.getElementById('projects');
@@ -203,12 +287,41 @@
                 }
                 data['working_days'] = working_days
                 data['projects'] = projects_
-                requset_and_toast_alert(`/api/employeeDispatch/${employee_id}`, 'put', data, '新增/修改');
+                requset_and_toast_alert(`/api/employeeDispatch/${employee_id}/${date}`, 'put', data, '新增/修改');
             }else if(btn.name === 'delete'){
-                requset_and_toast_alert(`/api/employeeDispatch/${employee_id}`, 'delete', data, '刪除');
+                requset_and_toast_alert(`/api/employeeDispatch/${employee_id}/${date}`, 'delete', data, '刪除');
             }
         });
     };
+
+    const pay_btn = document.getElementById('pay_btn');
+    pay_btn.addEventListener('click', () => {
+        const modal = new bootstrap.Modal('#payModal', {
+            keyboard: false
+        });
+        const payModal = document.getElementById('payModal');
+        var now = new Date();
+        var month = (now.getMonth() + 1);               
+        var day = now.getDate();
+        if (month < 10) 
+            month = "0" + month;
+        if (day < 10) 
+            day = "0" + day;
+        var today = now.getFullYear() + '-' + month + '-' + day;
+        payModal.querySelector('#date').value = today;
+        let payment = document.getElementById('records').querySelector('tfoot').querySelectorAll('td')[2].innerHTML;
+        payModal.querySelector('#accounts_payable').innerHTML = `應付金額：${payment}`;
+        payModal.querySelector('.modal-footer').querySelector('[name="save"]').addEventListener('click', () => {
+            const data = {
+                'date': payModal.querySelector('#date').value,
+                'amount': payModal.querySelector('#payment').value,
+                'type': '薪資',
+                'notes': `${document.getElementById('year').value}/${document.getElementById('month').value}`
+            }
+            requset_and_toast_alert(`/api/employeePayment/${employee_id}`, 'put', data, '已支薪');
+        })
+        modal.show(payModal);
+    });
 
 </script>
 {% endblock %}

@@ -190,48 +190,67 @@ class EmployeeC:
         db.session.commit()
         return True
     
-    def get_dispatches(self, date=None):
+    def get_dispatches(self, year, month):
+        start = dt.date(int(year), int(month), 11)
+        end = start + dt.timedelta(days=30)
+        end = dt.date(end.year, end.month, 10)
+
         employee_id = self.employee_id
+    
+        pl_sub = db.session.query(
+            ProjectLabor
+        ).filter(
+            ProjectLabor.date <= end,
+            ProjectLabor.date >= start,
+            ProjectLabor.employee_id == employee_id,
+            ProjectLabor.assigned == 1
+        ).subquery()
         
-        if date == None:
-            pl_sub = db.session.query(
-                ProjectLabor
-            ).filter(
-                ProjectLabor.employee_id == employee_id,
-                ProjectLabor.assigned == 1
-            ).subquery()
-            
-            query = db.session.query(
-                pl_sub.c.date,
-                func.group_concat(
-                    Project.project_name
-                ).label('project_name'),
-                func.sum(
-                    pl_sub.c.working_days
-                ).label('working_days'),
-            ).join(
-                pl_sub,
-                pl_sub.c.project_id == Project.project_id
-            ).group_by(
-                pl_sub.c.date
-            ).order_by(
-                desc(pl_sub.c.date)
-            ).all()
-        else:
-            query = db.session.query(
-                ProjectLabor.project_id,
-                ProjectLabor.date,
-                ProjectLabor.assigned,
-                ProjectLabor.working_days,
-                ProjectLabor.had_paid_or_not,
+        query = db.session.query(
+            pl_sub.c.date,
+            func.group_concat(
                 Project.project_name
-            ).join(
-                Project
-            ).filter(
-                ProjectLabor.employee_id == employee_id,
-                ProjectLabor.date == date,
-                ProjectLabor.assigned == 1
-            ).all()
+            ).label('project_name'),
+            func.sum(
+                pl_sub.c.working_days
+            ).label('working_days'),
+            func.sum(
+                pl_sub.c.working_days * Salary.salary
+            ).label("accounts_payable")
+        ).join(
+            pl_sub,
+            pl_sub.c.project_id == Project.project_id
+        ).outerjoin(
+            Salary,
+            and_(
+                pl_sub.c.employee_id == Salary.employee_id,
+                or_(
+                    Salary.end_date == None,
+                    pl_sub.c.date <= Salary.end_date
+                ),
+                pl_sub.c.date >= Salary.start_date
+            )
+        ).group_by(
+            pl_sub.c.date
+        ).order_by(
+            desc(pl_sub.c.date)
+        ).all()
+        return query
+    
+    def get_dispatches_by_date(self, date: str):
+        employee_id = self.employee_id
+        query = db.session.query(
+            ProjectLabor.project_id,
+            ProjectLabor.date,
+            ProjectLabor.working_days,
+            Project.project_name
+        ).join(
+            Project
+        ).filter(
+            ProjectLabor.employee_id == employee_id,
+            ProjectLabor.date == date,
+            ProjectLabor.assigned == 1
+        ).all()
         return query
 
     def modify_dispatches(self, date:str, projects:dict, working_days:float=1.0):

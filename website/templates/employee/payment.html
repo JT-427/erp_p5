@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}在職紀錄{% endblock %}
+{% block title %}支付紀錄{% endblock %}
 
 {% block body %}
 <div class="container">
     <div class="row mt-3">    
         <div class="col">
-            <h1 id="employee" employee_id="{{ employee['employee_id'] }}">{{ employee['name'] }}．獎金紀錄</h1>
+            <h1 id="employee" employee_id="{{ employee['employee_id'] }}">{{ employee['name'] }}．支付紀錄</h1>
         </div>
         <div class="col text-end">
-            <button type="button" class="btn btn-primary" id="create_btn">+新增獎金</button>
+            <button type="button" class="btn btn-primary" id="create_btn">+新增記錄</button>
         </div>
     </div>
     <div class="row mt-3">
@@ -50,6 +50,8 @@
                         <label class="form-label" for="type">類別</label>
                         <input type="text" class="form-control" id="type" list="type_list">
                         <datalist id="type_list">
+                            <option value="薪資">
+                            <option value="職務加給">
                             <option value="獎金">
                         </datalist>
                     </div>
@@ -75,7 +77,7 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
 <script>
     function empty_all_input_value(){
-        let inputs = document.getElementsByTagName('input, textarea');
+        let inputs = document.querySelectorAll('input, textarea');
         for(i=0; i<inputs.length; i++){
             inputs[i].value = '';
         };
@@ -107,7 +109,7 @@
                 document.getElementById(item.getAttribute('name')).value = item.innerHTML;
             }
             modifyModal.querySelector('.modal-body').setAttribute('sn', row.getAttribute('sn'));
-            modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = pos!==1 & rows[0] === row ? 'block' : 'none';
+            modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = 'block';
             modifyModalINNER.show(modifyModal);
         });
     }

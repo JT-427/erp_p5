@@ -35,17 +35,20 @@ def details(project_id):
     project_ = ProjectC(project_id)
     info = project_.get_info()
     details_ = project_.get_details()
-
     total_ = sum([i.price for i in details_])
-
     discount_ = (total_*1.05 if info.invoice else total_) - info['account_receivable']
+
+    payment_records = project_.get_payment()
+    total_payment = sum([i.amount for i in payment_records])
 
     return render_template(
         'project/details.html', 
         project=info, 
         details=details_, 
         total=total_, 
-        discount=discount_, 
+        discount=discount_,
+        payment_records=payment_records,
+        total_payment=total_payment,
         admin='admin' in [role.role_name for role in current_user.user_roles.all()], 
         user=current_user
     )

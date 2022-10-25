@@ -18,11 +18,6 @@ get_resource_fields = {
 }
 
 class MatarialAPI(Resource):
-    # @marshal_with(get_resource_fields)
-    # def get(self, matarial_id):
-    #     matarial = MatarialC(matarial_id)
-    #     return matarial.get_info(storehouse_id)
-
     def put(self, matarial_id):
         args = matarial_put_args.parse_args()
 
@@ -32,9 +27,11 @@ class MatarialAPI(Resource):
 
     def patch(self, matarial_id):
         matarial = MatarialC(matarial_id)
-        if 'storehouse_id' in request.json and 'remaining' in request.json:
+        if 'storehouse_id' in request.json and 'remaining' in request.json and request.json['remaining'] != '':
             matarial.modify_remaining(**request.json)
             return '', 201
+        else:
+            return '', 401
 
     def delete(self, matarial_id):
         matarial = MatarialC(matarial_id)

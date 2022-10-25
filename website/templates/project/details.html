@@ -14,17 +14,22 @@
         <div class="col text-end">
             <button type="button" class="btn btn-primary" id="add_details">+新增項目</button>
         </div>
+    </div>
     <div class="row mt-3">
+        <!-- 報價單 -->
         <table class="table table-bordered table-hover" style="vertical-align:middle;" id="project_table">
             <thead>
-              <tr>
-                <th scope="col">項目</th>
-                <th scope="col">單位</th>
-                <th scope="col">數量</th>
-                <th scope="col">單價</th>
-                <th scope="col">金額</th>
-                <!-- <th scope="col">折扣</th> -->
-              </tr>
+                <tr>
+                    <th colspan="5" class="text-center">報價單</th>
+                </tr>
+                <tr>
+                    <th scope="col">項目</th>
+                    <th scope="col">單位</th>
+                    <th scope="col">數量</th>
+                    <th scope="col">單價</th>
+                    <th scope="col">金額</th>
+                    <!-- <th scope="col">折扣</th> -->
+                </tr>
             </thead>
             <tbody>
                 {% for item in details %}
@@ -54,6 +59,46 @@
                 <tr>
                     <td colspan="4">總金額</td>
                     <td id="ar" project_id="{{ project['project_id'] }}">$ {{ project['account_receivable'] }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <div class="row mt-5">
+        <div class=" text-end">
+            <button type="button" class="btn btn-primary" id="add_payment">+新增收款</button>
+        </div>
+    </div>
+    <div class="row mt-3">
+        <!-- 收款紀錄 -->
+        <table class="table table-bordered table-hover" style="vertical-align:middle;" id="payment_records">
+            <thead>
+                <tr>
+                    <th colspan="3" class="text-center">收款紀錄</th>
+                </tr>
+                <tr>
+                    <th scope="col">日期</th>
+                    <th scope="col">金額</th>
+                    <th scope="col">備註</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in payment_records %}
+                <tr id="{{ item['sn'] }}">
+                    <td name="date">{{ item['date'] }}</td>
+                    <td name="amount">{{ item['amount'] }}</td>
+                    <td name="notes">{{ item['notes'] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>已收金額</td>
+                    <td colspan="2">{{ total_payment }}</td>
+                </tr>
+                <tr>
+                    <td>待收金額</td>
+                    <td colspan="2">{{ project['account_receivable'] - total_payment }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -120,6 +165,42 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-primary" name="submit">送出</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- modify project Payment -->
+    <div class="modal fade" id="modifyPaymentModal" tabindex="-1" aria-labelledby="modifyPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modifyPaymentModalLabel">{{ project['project_name'] }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" for="date">日期</label>
+                        <input type="date" class="form-control" id="date">
+                    </div>
+                    <div class="mb-3" id="should_receive">
+                        <!-- 應收金額 -->
+                    </div>
+                    <div class="mb-3" id="did_not_receive">
+                        <!-- 未收金額 -->
+                    </div>
+                    <div class="mb-3">
+                        <!-- 本次收款 -->
+                        <label class="form-label" for="amount">本次收款金額</label>
+                        <input type="number" class="form-control" id="amount" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" for="notes">備註</label>
+                        <textarea class="form-control" id="notes"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" name="submit">送出</button>
+                    <button type="button" class="btn btn-danger" name="delete">刪除</button>
                 </div>
             </div>
         </div>
@@ -228,6 +309,7 @@
         summation();
     });
 
+    // 調整總金額
     document.getElementById('ar').addEventListener('click', (event) => {
         const thisModal = new bootstrap.Modal('#modifyARModal', {
             keyboard: false
@@ -247,10 +329,84 @@
             const data = {
                 'account_receivable': inputs_[1].value
             }
-            requset_and_toast_alert('/api/project/'+project_id, 'patch', data, '修改');
+            requset_and_toast_alert('/api/project/'+project_id, 'PATCH', data, '修改');
         })
         thisModal.show(modifyARModal);
-    })
+    });
 
+    // 新增收款紀錄
+    document.getElementById('add_payment').addEventListener('click', () => {
+        const thisModal = new bootstrap.Modal('#modifyPaymentModal', {
+            keyboard: false
+        });
+        const paymentModal = document.getElementById('modifyPaymentModal');
+        empty_all_input_value();
+        paymentModal.querySelector('[name="delete"]').style.display = 'none';
+
+        var now = new Date();
+        var month = (now.getMonth() + 1);               
+        var day = now.getDate();
+        if (month < 10) 
+            month = "0" + month;
+        if (day < 10) 
+            day = "0" + day;
+        var today = now.getFullYear() + '-' + month + '-' + day;
+        document.getElementById('date').value = today;
+        document.getElementById('should_receive').innerHTML = "應收金額：${{ project['account_receivable'] }}";
+        document.getElementById('did_not_receive').innerHTML = "未收金額：${{ project['account_receivable'] - total_payment }}";
+
+        paymentModal.querySelector('[name="submit"]').addEventListener('click', () => {
+            let inputs = paymentModal.querySelectorAll('input, textarea');
+            let data = Object();
+            for(i=0; i<inputs.length; i++){
+                data[`${inputs[i].id}`] = inputs[i].value;
+            };
+            requset_and_toast_alert(`/api/projectPayment/${project_id}`, 'put', data, '新增');
+        });
+        thisModal.show(paymentModal);
+    });
+    const payment_records = document.getElementById('payment_records').querySelector('tbody').querySelectorAll('tr');
+    for(pr_pos=0; pr_pos<payment_records.length; pr_pos++){
+        payment_records[pr_pos].addEventListener('click', (event) => {
+            let sn = event.target.parentElement.id;
+            const thisModal = new bootstrap.Modal('#modifyPaymentModal', {
+                keyboard: false
+            });
+            const paymentModal = document.getElementById('modifyPaymentModal');
+            empty_all_input_value();
+            paymentModal.querySelector('[name="delete"]').style.display = 'block';
+
+            document.getElementById('should_receive').innerHTML = "";
+            document.getElementById('did_not_receive').innerHTML = "";
+
+            let inputs = paymentModal.querySelectorAll('input, textarea');
+            for(i=0; i<inputs.length; i++){
+                inputs[i].value = event.target.parentElement.querySelector(`[name="${inputs[i].id}"]`).innerHTML;
+            };
+
+            paymentModal.querySelector('[name="delete"]').addEventListener('click', () => {
+                requset_and_toast_alert(`/api/projectPayment/${project_id}`, 'delete', {'sn': sn}, '刪除');
+            });
+            paymentModal.querySelector('[name="submit"]').addEventListener('click', () => {
+                let inputs = paymentModal.querySelectorAll('input, textarea');
+                let data = Object();
+                for(i=0; i<inputs.length; i++){
+                    data[`${inputs[i].id}`] = inputs[i].value;
+                };
+                data['sn'] = sn
+                requset_and_toast_alert(`/api/projectPayment/${project_id}`, 'put', data, '新增');
+            });
+
+            thisModal.show(paymentModal);
+            
+        })
+    };
+
+    function empty_all_input_value(){
+        let inputs = document.querySelectorAll('input, textarea');
+        for(i=0; i<inputs.length; i++){
+            inputs[i].value = '';
+        };
+    };
 </script>
 {% endblock %}

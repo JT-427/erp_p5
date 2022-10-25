@@ -36,10 +36,10 @@ class ProjectDetailsAPI(Resource):
         args = project_details_put_args.parse_args()
         project = ProjectC(project_id)
         project.modify_details(**args)
-        return 201
+        return '', 201
     
     def delete(self, project_id):
         args = project_details_delete_args.parse_args()
         project = ProjectC(project_id)
         project.delete_detail(**args)
-        return 204
+        return '', 204

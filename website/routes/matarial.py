@@ -57,3 +57,10 @@ def transfer():
     matarial = MatarialC(matarial_id)
     records = matarial.get_transfer_record()
     return render_template('matarial/transfer.html', matarial=matarial.get_info(), records=records, user=current_user)
+
+@matarial.route("/adjust-remaining", methods=['GET'])
+@login_required
+@check_authority
+def adjust_remaining():
+    matarial_id = request.args['matarial_id']
+    matarial = MatarialC(matarial_id)

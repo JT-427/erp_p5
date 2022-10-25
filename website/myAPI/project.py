@@ -14,6 +14,7 @@ project_post_args.add_argument("invoice", type=bool, help="invoice of the projec
 project_post_args.add_argument("singing_date", type=str, help="singing_date of the project is required", required=True)
 project_post_args.add_argument("start_date", type=str)
 project_post_args.add_argument("finish_date", type=str)
+project_post_args.add_argument("company_id", type=str, required=True)
 project_post_args.add_argument("referrer", type=str)
 project_post_args.add_argument("commision", type=float)
 
@@ -30,8 +31,10 @@ get_resource_fields = {
     "customer_id": fields.String,
     "account_receivable": fields.Float,
     "referrer": fields.String,
+    "company_id": fields.String,
     "commision": fields.Float,
-    "customer_name": fields.String
+    "customer_name": fields.String,
+    "company_name": fields.String
 }
 class ProjectAPI(Resource):
     @marshal_with(get_resource_fields)

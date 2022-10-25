@@ -8,3 +8,4 @@ from .storehouse import storehouse as storehouse_
 from .matarial import matarial as matarial_
 from .miscellaneous_expenditure import miscellaneousExpenditure as miscellaneousExpenditure_
 from .matarial_supplier import matarial_supplier as matarial_supplier_
+from .company import company as company_

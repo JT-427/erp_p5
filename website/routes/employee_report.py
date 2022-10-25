@@ -9,14 +9,14 @@ employeeReport = Blueprint('employee_report', __name__)
 
 @employeeReport.route("/", methods=['GET'])
 @login_required
-# @check_authority
+@check_authority
 def index():
     return render_template('employee_report/index.html', user=current_user)
 
 @employeeReport.route("/records", methods=['GET'])
 @login_required
-# @check_authority
+@check_authority
 def records():
     employee = EmployeeC(current_user.employee_id)
-    records = employee.get_dispatches()
+    records = employee.get_dispatches(year=dt.date.today().year, month=dt.date.today().month)
     return render_template('employee_report/records.html', records=records, user=current_user)
