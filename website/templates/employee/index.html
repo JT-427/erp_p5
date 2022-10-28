@@ -188,7 +188,9 @@
           for(g=0; g<Object.keys(data).length; g++){
             let key = Object.keys(data)[g];
             let item = document.getElementById(key);
-            item.value = data[key];
+            if(item){
+              item.value = data[key];
+            };
           };
         });
         
