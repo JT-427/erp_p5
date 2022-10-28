@@ -27,7 +27,7 @@
           <th scope="col">放款日</th>
           <th scope="col">郵寄地址</th>
           <th scope="col">付款方式</th>
-          <th scope="col" style="display:none;">備註</th>
+          <th scope="col">備註</th>
         </tr>
       </thead>
       <tbody>
@@ -38,13 +38,13 @@
               <td name="contact_number">{{ outsourcer['contact_number'] if outsourcer['contact_number'] else null }}</td>
               <td name="fax" style="display:none;">{{ outsourcer['fax'] if outsourcer['email'] else null }}</td>
               <td name="email" style="display:none;">{{ outsourcer['email'] if outsourcer['email'] else null }}</td>
-              <td name="outsourcer_title">{{ outsourcer['outsourcer_title'] }}</td>
+              <td name="outsourcer_title">{{ outsourcer['outsourcer_title'] if outsourcer['outsourcer_title'] else null }}</td>
               <td name="tax_id_num">{{ outsourcer['tax_id_num'] if outsourcer['tax_id_num'] else null }}</td>
               <td name="invoice_date">{{ outsourcer['invoice_date'] if outsourcer['invoice_date'] else null }}</td>
               <td name="drawdown_date">{{ outsourcer['drawdown_date'] if outsourcer['drawdown_date'] else null }}</td>
               <td name="address">{{ outsourcer['address'] if outsourcer['address'] else null }}</td>
               <td name="payment_method">{{ outsourcer['payment_method'] if outsourcer['payment_method'] else null }}</td>
-              <td name="notes" style="display:none;">{{ outsourcer['notes'] if outsourcer['notes'] else null }}</td>
+              <td name="notes">{{ outsourcer['notes'] if outsourcer['notes'] else null }}</td>
           </tr>
           {% endfor %}
       </tbody>

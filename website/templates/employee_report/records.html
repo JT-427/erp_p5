@@ -32,7 +32,7 @@
             </div>
         </div>
     </div>
-    <table class="table table-bordered" style="vertical-align:middle;" id="dataTable">
+    <table class="table table-bordered mt-3" style="vertical-align:middle;" id="dataTable">
         <thead>
           <tr>
             <th scope="col">日期</th>
@@ -45,7 +45,7 @@
             <tr>
                 <td>{{ record['date'] }}</td>
                 <td>{{ record['project_name'] }}</td>
-                <td>{{ record['working_days'] }}</td>
+                <td>{{ record['working_days'] if record['working_days'] else null }}</td>
             </tr>
             {% endfor %}
         </tbody>
@@ -53,6 +53,8 @@
     </table>
 </div>
 <script>
+    const employee_id = "{{ user.Employee.employee_id }}";
+
     const yearSelector = document.getElementById('year');
     const monthSelector = document.getElementById('month');
     const today = new Date();
@@ -92,7 +94,7 @@
         }).then((response) => {
             return response.json()
         }).then((data) => {
-            const table = document.getElementById('records');
+            const table = document.getElementById('dataTable');
             const tbody = table.querySelector('tbody');
             tbody.innerHTML = '';
             for(i=0; i<data.length; i++){
@@ -101,7 +103,6 @@
                         <td name="date">${data[i]['date']}</td>
                         <td name="project_name">${data[i]['project_name']}</td>
                         <td name="working_days">${data[i]['working_days'] === null ? '': data[i]['working_days']}</td>
-                        <td name="had_paid_or_not">${data[i]['had_paid_or_not'] === false? '否': '是'}</td>
                     </tr>
                 `;
             }

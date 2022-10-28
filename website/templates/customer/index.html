@@ -38,7 +38,7 @@
               <td name="contact_number">{{ customer['contact_number'] if customer['contact_number'] else null }}</td>
               <td name="fax" style="display:none;">{{ customer['fax'] if customer['fax'] else null }}</td>
               <td name="email" style="display:none;">{{ customer['email'] if customer['email'] else null }}</td>
-              <td name="customer_title">{{ customer['customer_title'] }}</td>
+              <td name="customer_title">{{ customer['customer_title'] if customer['customer_title'] else null }}</td>
               <td name="tax_id_num">{{ customer['tax_id_num'] if customer['tax_id_num'] else null }}</td>
               <td name="invoice_date">{{ customer['invoice_date'] if customer['invoice_date'] else null }}</td>
               <td name="drawdown_date">{{ customer['drawdown_date'] if customer['drawdown_date'] else null }}</td>
@@ -81,7 +81,7 @@
           </div>
           <div class="mb-3">
             <label for="customer_title" class="form-label">抬頭</label>
-            <input class="form-control" id="customer_title" required>
+            <input class="form-control" id="customer_title">
           </div>
           <div class="mb-3">
             <label for="tax_id_num" class="form-label">統編</label>

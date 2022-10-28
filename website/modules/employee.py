@@ -14,10 +14,11 @@ class EmployeeC:
             self.get_employee_info()
             
     def get_employee_info(self):
-        employee_query = db.session.query(Employee).\
-            filter(
-                Employee.employee_id == self.employee_id
-            ).first()
+        employee_query = db.session.query(
+            Employee
+        ).filter(
+            Employee.employee_id == self.employee_id
+        ).first()
         if employee_query:
             self.name = employee_query.name
             self.sex = employee_query.sex
@@ -46,7 +47,7 @@ class EmployeeC:
         """
         name = info['name']
         sex = info['sex']
-        birthday = dt.datetime.strptime(info['birthday'], '%Y-%m-%d')
+        birthday = info['birthday'] if info['birthday'] else None
         telephone = info['telephone'] if info['telephone'] else None
         cellphone = info['cellphone'] if info['cellphone'] else None
         address = info['address'] if info['address'] else None
@@ -60,7 +61,7 @@ class EmployeeC:
         b = oct(random.randint(8**9+1, 8**10))[2:] # 10
         c = str(random.randint(10287, 99874)) # 5
 
-        employee_id = a + info['sex'] + b + birthday.strftime('%m%d') + c + hired_date.strftime('%y%m') + str(random.randint(1022, 9911))
+        employee_id = a + info['sex'] + b + str(random.randint(1111, 9999)) + c + hired_date.strftime('%y%m') + str(random.randint(1022, 9911))
         new_employee = Employee(
             employee_id=employee_id,
             name=name,
@@ -99,11 +100,12 @@ class EmployeeC:
         ).first()[0]
         db.session.add(
             RUsersRole(
-                role_id = 1,
+                role_id = 2,
                 user_id = user_id
             )
         )
         db.session.commit()
+        return employee_id, user_id
     
     def modify(self, name, sex, birthday, telephone, cellphone, address, email):
         empoloyee_id = self.employee_id
@@ -215,7 +217,11 @@ class EmployeeC:
                 pl_sub.c.working_days
             ).label('working_days'),
             func.sum(
-                pl_sub.c.working_days * Salary.salary
+                func.IF(
+                    Salary.unit == '日',
+                    pl_sub.c.working_days * Salary.salary,
+                    pl_sub.c.working_days * Salary.salary/30
+                )
             ).label("accounts_payable")
         ).join(
             pl_sub,
@@ -429,7 +435,7 @@ class EmployeeC:
                 )
             )
         ).order_by(
-            desc(HiredRecord.hired_date)
+            HiredRecord.hired_date
         ).all()
         employees = []
         for employee in employees_query:
@@ -437,7 +443,7 @@ class EmployeeC:
             p['employee_id'] = employee.employee_id
             p['name'] = employee.name
             p['sex'] = '男' if employee.sex == 'm' else '女'
-            p['birthday'] = employee.birthday.strftime('%Y-%m-%d')
+            p['birthday'] = employee.birthday
             contact = ""
             if employee.telephone:
                 contact += employee.telephone

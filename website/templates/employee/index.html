@@ -39,9 +39,9 @@
           <tr class="data-row" id="{{ employee['employee_id'] }}" uid="{{ employee['user_id'] }}">
               <th scope="row" name="name">{{ employee['name'] }}</th>
               <td name="sex">{{ employee['sex'] }}</td>
-              <td name="birthday">{{ employee['birthday'] }}</td>
+              <td name="birthday">{{ employee['birthday'] if employee['birthday'] else null }}</td>
               <td name="contact">{{ employee['contact'] }}</td>
-              <td name="address">{{ employee['address'] if employee['address'] else '' }}</td>
+              <td name="address">{{ employee['address'] if employee['address'] else null }}</td>
               <!-- <td name="email">{{ employee['email'] if employee['email'] else '' }}</td> -->
               <td><a href="/employee/salary-record/{{ employee['employee_id'] }}">{{ employee['salary'] }} / {{ employee['salary_unit'] }}</a></td>
               <td>{{ employee['salary_start_date'] }}</td>

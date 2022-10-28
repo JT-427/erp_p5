@@ -8,7 +8,6 @@ class Users(db.Model, UserMixin):
     employee_id = db.Column(db.String(32), db.ForeignKey('employee.employee_id'))
     password = db.Column(db.String(100))
 
-    # Employee = db.relationship('Employee', backref='users', lazy='select')
     RUsersRole = db.relationship('RUsersRole', backref='users', lazy='select')
     MiscellaneousExpenditure = db.relationship(
         'MiscellaneousExpenditure',
@@ -89,7 +88,7 @@ class Employee(db.Model):
     employee_id = db.Column(db.String(32), primary_key=True)
     name = db.Column(db.String(10), nullable=False)
     sex = db.Column(db.String(1), nullable=False)
-    birthday = db.Column(db.Date, nullable=False)
+    birthday = db.Column(db.Date)
     telephone = db.Column(db.String(10))
     cellphone = db.Column(db.String(10))
     address = db.Column(db.String(50))
@@ -273,7 +272,7 @@ class Customer(db.Model):
     # 業主
     customer_id = db.Column(db.String(32), primary_key=True)
     customer_name = db.Column(db.String(50), nullable=False)
-    customer_title = db.Column(db.String(50), nullable=False)
+    customer_title = db.Column(db.String(50))
     address = db.Column(db.String(50))
     tax_id_num = db.Column(db.Integer)
     contact_person = db.Column(db.String(30))
@@ -357,7 +356,7 @@ class ProjectPayment(db.Model):
     notes = db.Column(db.String(50))
 
     __table_args__ = (
-        CheckConstraint(amount >= 0),
+        CheckConstraint(amount != 0),
     )
 
 class MiscellaneousExpenditure(db.Model):
@@ -382,10 +381,10 @@ class Company(db.Model):
     address = db.Column(db.String(50))
     postal_address = db.Column(db.String(50))
     tax_id_num = db.Column(db.Integer)
-    fax = db.Column(db.String(30))
     responsible_person = db.Column(db.String(10))
     contact_person = db.Column(db.String(30))
     contact_number = db.Column(db.String(30))
+    fax = db.Column(db.String(30))
     create_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date)
     notes = db.Column(db.String(100))

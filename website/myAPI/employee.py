@@ -24,13 +24,19 @@ employee_put_args.add_argument("address", type=str, help="address of employee is
 employee_put_args.add_argument("email", type=str, help="email of employee is required")
 
 get_resource_fields = {
+    "employee_id": fields.String,
     "name": fields.String,
     "sex": fields.String,
     "birthday": fields.String,
     "telephone": fields.String,
     "cellphone": fields.String,
     "address": fields.String,
-    "email": fields.String
+    "email": fields.String,
+    "hired_date": fields.String,
+    "user_id": fields.Integer,
+    "salary": fields.Float,
+    "salary_unit": fields.String,
+    "salary_start_date": fields.String
 }
 
 class EmployeeAPI(Resource):
@@ -45,6 +51,7 @@ class EmployeeAPI(Resource):
         return '', 201
 
 class EmployeeListAPI(Resource):
+    @marshal_with(get_resource_fields)
     def get(self) -> tuple:
         employees_query = EmployeeC().get_all_employee()
         return employees_query, 200
@@ -53,3 +60,4 @@ class EmployeeListAPI(Resource):
         employee_ = EmployeeC()
         employee_.create(employee_post_args.parse_args())
         return '', 201
+    

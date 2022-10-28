@@ -201,7 +201,7 @@ class ProjectC:
             ProjectOutsourced.price,
             ProjectOutsourced.date,
             ProjectOutsourced.notes,
-            Outsourcer.outsourcer_name
+            func.concat(Outsourcer.outsourcer_name, ' (', Outsourcer.notes, ')').label('outsourcer_name')
         ).join(
             Outsourcer
         ).filter(

@@ -551,11 +551,13 @@ class MatarialC:
 
     # 
     def get_matarials(self, storehouse_id: str='') -> tuple:
+        row_number_column = func.row_number().over(partition_by=(MatarialInStorehouse.matarial_id, MatarialInStorehouse.matarial_id), order_by=desc(MatarialInStorehouse.sn)).label('row_num')
         sub_query = db.session.query(
             MatarialInStorehouse.matarial_id,
             MatarialInStorehouse.storehouse_id,
             MatarialInStorehouse.date,
-            MatarialInStorehouse.remaining
+            MatarialInStorehouse.remaining,
+            
         ).filter(
             or_(
                 storehouse_id == '',
@@ -563,16 +565,20 @@ class MatarialC:
             )
         ).order_by(
             desc(MatarialInStorehouse.sn)
-        ).limit(1).subquery()
+        )
+        sub_query = sub_query.add_column(row_number_column)
+        sub_query = sub_query.from_self().filter(row_number_column == 1).subquery()
 
         matarials_query = db.session.query(
             Matarial.matarial_id,
             Matarial.matarial_name,
             Matarial.notes,
             Matarial.unit,
-            sub_query.c.storehouse_id,
-            sub_query.c.remaining
+            sub_query.c.matarial_in_storehouse_storehouse_id.label('storehouse_id'),
+            sub_query.c.matarial_in_storehouse_remaining.label('remaining')
         ).outerjoin(
             sub_query
+        ).order_by(
+            Matarial.matarial_name
         ).all()
         return matarials_query

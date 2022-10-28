@@ -94,23 +94,26 @@
     const table = document.getElementById('dataTable');
     const tbody = table.querySelector('tbody');
 
-
-    modal.addEventListener('show.bs.modal', event => {
-        const outsourcer_input = document.getElementById('outsourcer_id');
-        fetch('/api/outsourcer/', {
-            method: 'get'
-        }).then((response) => {
-            return response.json();
-        }).then((data) => {
-            for(i=0; i<data.length; i++){
-                var outsourcer = data[i]
-                var option_ = document.createElement('option');
-                option_.value = outsourcer['outsourcer_id'];
-                option_.innerHTML = outsourcer['outsourcer_name'];
-                outsourcer_input.appendChild(option_);
-            };
-        })
-    });
+    function get_outsourcer(){
+        return new Promise((resolve, reject) => {
+            const outsourcer_input = document.getElementById('outsourcer_id');
+            fetch('/api/outsourcer/', {
+                method: 'get'
+            }).then((response) => {
+                return response.json();
+            }).then((data) => {
+                outsourcer_input.innerHTML = '';
+                for(i=0; i<data.length; i++){
+                    var outsourcer = data[i]
+                    var option_ = document.createElement('option');
+                    option_.value = outsourcer['outsourcer_id'];
+                    option_.innerHTML = outsourcer['outsourcer_name'] + ` (${outsourcer['notes']})`;
+                    outsourcer_input.appendChild(option_);
+                };
+                resolve();
+            })
+        });
+    };
     // create
     const create_btn = document.getElementById('createButton');
     create_btn.addEventListener('click', () => {
@@ -119,7 +122,7 @@
         });
         let title = modal.querySelector('.modal-header').querySelector('h5');
         title.innerHTML = '新增' + chineseName;
-
+        get_outsourcer();
         modalBody.removeAttribute('sn');
         const inputs_ = modal.querySelectorAll('input, textarea');
         for(i=0; i<inputs_.length; i++){
@@ -143,13 +146,17 @@
             title.innerHTML = `更新${chineseName}資訊`;
             // body
             modalBody.setAttribute('sn', row.getAttribute('sn'));
-            for(g=0; g<row.children.length; g++){
-                let item = row.children[g];
-                let input_ = document.getElementById(item.getAttribute('name'));
-                if(input_){
-                    input_.value = item.innerHTML;
-                }
-            }
+            async function fillin(){
+                let s = await get_outsourcer();
+                for(g=0; g<row.children.length; g++){
+                    let item = row.children[g];
+                    let input_ = document.getElementById(item.getAttribute('name'));
+                    if(input_){
+                        input_.value = item.innerHTML;
+                    };
+                };
+            };
+            fillin();
             // footer
             modalFooter.querySelector('[name="delete"]').style.display = 'block';
             modifyDataModal.show(modal);
@@ -175,9 +182,9 @@
             };
             
             if(event.target.name==='save'){
-                requset_and_toast_alert('/api/prejectOutsourced/'+project_id, 'put', data, '修改');
+                requset_and_toast_alert('/api/projectOutsourced/'+project_id, 'put', data, '修改');
             }else{
-                requset_and_toast_alert('/api/prejectOutsourced/'+project_id, 'delete', {'sn': sn}, '刪除');
+                requset_and_toast_alert('/api/projectOutsourced/'+project_id, 'delete', {'sn': sn}, '刪除');
             }
         }) 
     }
