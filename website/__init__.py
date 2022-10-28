@@ -24,8 +24,8 @@ def create_app(config_file="config.py"):
     def load_user(user_id):
         return Users.query.get(user_id)
     
-    db.drop_all(app=app)
-    db.create_all(app=app)
+    # db.drop_all(app=app)
+    # db.create_all(app=app)
 
     from .myAPI import (
         ProjectAPI, ProjectListAPI,
