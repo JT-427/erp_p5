@@ -35,8 +35,8 @@
                 {% for matarial_supplier in matarial_suppliers %}
                 <tr id="{{ matarial_supplier['matarial_supplier_id'] }}">
                     <td name="matarial_supplier_name">{{ matarial_supplier['matarial_supplier_name'] }}</td>
-                    <td name="contact_person">{{ matarial_supplier['contact_person'] }}</td>
-                    <td name="contact_number">{{ matarial_supplier['contact_number'] }}</td>
+                    <td name="contact_person">{{ matarial_supplier['contact_person'] if matarial_supplier['contact_person'] else null }}</td>
+                    <td name="contact_number">{{ matarial_supplier['contact_number'] if matarial_supplier['contact_number'] else null }}</td>
                     <td name="email" style="display:none;">{{ matarial_supplier['email'] if matarial_supplier['email'] else null }}</td>
                     <td name="notes">{{ matarial_supplier['notes'] if matarial_supplier['notes'] else null }}</td>
                     <td name="cooperating" style="display:none;">{{ matarial_supplier['cooperating']|string|lower }}</td>
