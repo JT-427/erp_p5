@@ -311,14 +311,22 @@ class EmployeeC:
             ProjectLabor.date == date,
             ProjectLabor.assigned == 1
         ).all()
+
         days_pos = 0
+        working_days_origin = 0 # 原本的總工時，如果不是１，就不能被員工修改。
         for i in query:
+            working_days_origin += i.working_days if i.working_days else 0
             if projects[i.project_id] == True:
                 i.working_days = days[days_pos]
                 days_pos += 1
             else:
                 i.working_days = None
-        db.session.commit()
+
+        if working_days_origin == 1.0 or working_days_origin == 0:
+            db.session.commit()
+        else:
+            db.session.rollback()
+            
 
     def get_hired_record(self):
         employee_id = self.employee_id
