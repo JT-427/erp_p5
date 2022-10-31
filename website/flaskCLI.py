@@ -31,6 +31,7 @@ def line_notify_test():
     return ''
 @cli.cli.command('dispatch_notification')
 def dispatch_notification():
+    date = dt.date.today() if dt.datetime.now().hour > 6 else dt.date.today() + dt.timedelta(1)
     q1 = db.session.query(
         ProjectLabor.employee_id,
         ProjectLabor.project_id,
@@ -43,7 +44,7 @@ def dispatch_notification():
         Employee
     ).filter(
         ProjectLabor.assigned == 1,
-        ProjectLabor.date == dt.date.today() + dt.timedelta(1)
+        ProjectLabor.date == date
     ).subquery()
     query = db.session.query(
         q1.c.project_name,
@@ -79,3 +80,4 @@ def check_matarial():
     ).fetchall()
     for i in result:
         print(i.remaining_should_be == i.remaining)
+        
