@@ -18,5 +18,8 @@ def index():
 @check_authority
 def records():
     employee = EmployeeC(current_user.employee_id)
-    records = employee.get_dispatches(year=dt.date.today().year, month=dt.date.today().month)
+    today = dt.date.today()
+    if today.day < 11:
+        today -= dt.timedelta(15)
+    records = employee.get_dispatches(year=today.year, month=today.month)
     return render_template('employee_report/records.html', records=records, user=current_user)
