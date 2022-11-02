@@ -195,7 +195,7 @@
                     <td>${summation[1]}</td>
                 </tr>
             `;
-
+            row_data_modify();
         });
     };
     
@@ -208,64 +208,67 @@
 
     const modifyModal = document.getElementById('modifyModal');
     const modifyBody = modifyModal.querySelector('.modal-body');
-    const rows = document.getElementsByTagName('tbody')[0].querySelectorAll('tr');
-    for(pos=0; pos<rows.length; pos++){
-        const row = rows[pos];
-        row.addEventListener('click', (event) => {
-            const modifyModalINNER = new bootstrap.Modal('#modifyModal', {
-                keyboard: false
-            });
-            empty_all_input_value();
-            fetch(`/api/employeeDispatch/${employee_id}/${row.querySelector('[name="date"]').innerHTML}`, {
-                'method': 'get'
-            }).then((response) => {
-                return response.json()
-            }).then((data) => {
-                let col1 = document.createElement('div');
-                col1.setAttribute('class', 'col-6');
-                let col2 = document.createElement('div');
-                col2.setAttribute('class', 'col-6');
-                working_days = 0
-                for(i=0; i<data.length; i++){
-                    let project_ = data[i];
-                    let checkbox = `\
-                    <div class="form-check">\
-                        <input class="form-check-input dispatch-item" type="checkbox" id="${project_['project_id']}" ${project_['working_days']?'checked':''}>\
-                        <label class="form-check-label" for="${project_['project_id']}">\
-                                ${project_['project_name']}\
-                        </label>\
-                    </div>\
-                    `
-                    if(i%2 === 0){
-                        col1.innerHTML += checkbox
-                    }else{
-                        col2.innerHTML += checkbox
+    function row_data_modify(){
+        const rows = document.getElementsByTagName('tbody')[0].querySelectorAll('tr');
+        for(pos=0; pos<rows.length; pos++){
+            const row = rows[pos];
+            row.addEventListener('click', (event) => {
+                const modifyModalINNER = new bootstrap.Modal('#modifyModal', {
+                    keyboard: false
+                });
+                empty_all_input_value();
+                fetch(`/api/employeeDispatch/${employee_id}/${row.querySelector('[name="date"]').innerHTML}`, {
+                    'method': 'get'
+                }).then((response) => {
+                    return response.json()
+                }).then((data) => {
+                    let col1 = document.createElement('div');
+                    col1.setAttribute('class', 'col-6');
+                    let col2 = document.createElement('div');
+                    col2.setAttribute('class', 'col-6');
+                    working_days = 0
+                    for(i=0; i<data.length; i++){
+                        let project_ = data[i];
+                        let checkbox = `\
+                        <div class="form-check">\
+                            <input class="form-check-input dispatch-item" type="checkbox" id="${project_['project_id']}" ${project_['working_days']?'checked':''}>\
+                            <label class="form-check-label" for="${project_['project_id']}">\
+                                    ${project_['project_name']}\
+                            </label>\
+                        </div>\
+                        `
+                        if(i%2 === 0){
+                            col1.innerHTML += checkbox
+                        }else{
+                            col2.innerHTML += checkbox
+                        }
+                        working_days += project_['working_days']
                     }
-                    working_days += project_['working_days']
-                }
-                working_days = working_days.toFixed(2)
-                let row = document.createElement('div');
-                row.setAttribute('class', 'row');
-                let txt = document.createElement('p');
-                txt.innerHTML = "出工";
-                row.appendChild(txt);
-                row.appendChild(col1);
-                row.appendChild(col2);
-                let projects_ = document.getElementById('projects');
-                projects_.innerHTML = '';
-                projects_.appendChild(row)
+                    working_days = working_days.toFixed(2)
+                    let row = document.createElement('div');
+                    row.setAttribute('class', 'row');
+                    let txt = document.createElement('p');
+                    txt.innerHTML = "出工";
+                    row.appendChild(txt);
+                    row.appendChild(col1);
+                    row.appendChild(col2);
+                    let projects_ = document.getElementById('projects');
+                    projects_.innerHTML = '';
+                    projects_.appendChild(row)
 
-                let date = document.getElementById('date');
-                date.value = event.target.parentElement.querySelector('[name="date"]').innerHTML
-                date.disabled=true;
-                document.getElementById('working_days').value = working_days;
-                modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = document.getElementById('working_days').value == 0 ? 'block' : 'none';
-            })
-            
-            modifyModalINNER.show(modifyModal);
-        });
-    }
+                    let date = document.getElementById('date');
+                    date.value = event.target.parentElement.querySelector('[name="date"]').innerHTML
+                    date.disabled=true;
+                    document.getElementById('working_days').value = working_days;
+                    modifyModal.querySelector('.modal-footer').querySelector('[name="delete"]').style.display = document.getElementById('working_days').value == 0 ? 'block' : 'none';
+                })
+                
+                modifyModalINNER.show(modifyModal);
+            });
+        }
 
+    };
+    row_data_modify();
 
     // commit
     let modifyButtons = document.getElementsByClassName('modifyButton');
