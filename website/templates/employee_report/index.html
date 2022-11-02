@@ -28,6 +28,9 @@
 <script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
 <script>
   var now = new Date();
+  
+  var tmpDate = new Date(2020 , 07 , 20); // Augest 20, 2020
+
   var month = (now.getMonth() + 1);               
   var day = now.getDate();
   if (month < 10) 
@@ -38,6 +41,22 @@
 
   let date = document.getElementById('date');
   date.value = today;
+  function addDaysToDate(date, days){
+    var res = new Date(date);
+    res.setDate(res.getDate() + days);
+    return res;
+  }
+  function formatDateToString(date){
+    var month = (date.getMonth() + 1);
+    var day = date.getDate();
+    if (month < 10) 
+      month = "0" + month;
+    if (day < 10) 
+        day = "0" + day;
+    return `${date.getFullYear()}-${month}-${day}`
+  }
+  date.max = formatDateToString(now);
+  date.min = formatDateToString(addDaysToDate(now, -7));
   get_dispatches();
   function get_dispatches(){
     const date = document.getElementById('date').value;
