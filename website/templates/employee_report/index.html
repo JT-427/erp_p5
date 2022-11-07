@@ -15,6 +15,10 @@
   <div id="projectList" class="mb-3">
     
   </div>
+  <div class="mb-3">
+    <label for="working_days" class="form-label">工時</label>
+    <input type="number" class="form-control" id="working_days">
+  </div>
   <div id="btnGroup" class="mb-3 text-center">
     <button type="button" class="btn btn-success" onclick="postReport()">回報</button>
   </div>
@@ -29,8 +33,6 @@
 <script>
   var now = new Date();
   
-  var tmpDate = new Date(2020 , 07 , 20); // Augest 20, 2020
-
   var month = (now.getMonth() + 1);               
   var day = now.getDate();
   if (month < 10) 
@@ -41,12 +43,9 @@
 
   let date = document.getElementById('date');
   date.value = today;
-  function addDaysToDate(date, days){
-    var res = new Date(date);
-    res.setDate(res.getDate() + days);
-    return res;
-  }
+
   function formatDateToString(date){
+    var date = new Date(date);
     var month = (date.getMonth() + 1);
     var day = date.getDate();
     if (month < 10) 
@@ -55,8 +54,11 @@
         day = "0" + day;
     return `${date.getFullYear()}-${month}-${day}`
   }
-  date.max = formatDateToString(now);
-  date.min = formatDateToString(addDaysToDate(now, -7));
+  const max_date = now.setDate(now.getDate() + 1);
+  const min_date = now.setDate(now.getDate() - 7);
+
+  date.max = formatDateToString(max_date);
+  date.min = formatDateToString(min_date);
   get_dispatches();
   function get_dispatches(){
     const date = document.getElementById('date').value;
@@ -69,6 +71,7 @@
       col1.setAttribute('class', 'col-6');
       let col2 = document.createElement('div');
       col2.setAttribute('class', 'col-6');
+      var working_days = 0;
       for(i=0; i<data.length; i++){
         let project_ = data[i];
         let checkbox = `\
@@ -84,17 +87,22 @@
         }else{
             col2.innerHTML += checkbox
         }
+        working_days += project_['working_days']
       }
       let row = document.createElement('div');
       row.setAttribute('class', 'row');
       let txt = document.createElement('p');
       txt.innerHTML = "派工";
       row.appendChild(txt);
+      let working_days_input = document.getElementById('working_days');
       if(col1.innerHTML){
         row.appendChild(col1);
         row.appendChild(col2);
+        working_days_input.style.display = 'block';
+        working_days_input.value = working_days;
       }else{
         row.innerHTML = '<p>無派工資料</p>';
+        working_days_input.style.display = 'none';
       }
       let projectList = document.getElementById('projectList');
       projectList.innerHTML = '';
@@ -114,9 +122,14 @@
     if(Object.keys(projects).length !== 0){
       const data = {
         'date': date,
-        'projects': projects
+        'projects': projects,
+        'working_days': document.getElementById('working_days').value
       };
-      requset_and_toast_alert('/api/employeeDispatchReport/', 'put', data, '回報', false);
+      if(data['working_days'] > 2 || data['working_days'] < 0){
+        toast_alert('fail', '工時不得超過2或低於0，若有特殊狀況請洽老闆', false);
+      }else{
+        requset_and_toast_alert('/api/employeeDispatchReport/', 'put', data, '回報', false);
+      }
     }
   }
 </script>

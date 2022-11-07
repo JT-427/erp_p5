@@ -632,7 +632,15 @@
             const assigned = employee.checked;
             requset_and_toast_alert('/api/projectDispatch/'+project_id, 'put', {'employee_id': employee_id, 'date': date, 'assigned': assigned}, '派工', false);
         }
-        
+        console.log()
+        // Line notify (personal)
+        fetch('/api/dispatchNotify/'+document.getElementById('date').value, {
+            method: 'GET',
+            headers: new Headers({
+                'Content-Type': 'application/json'
+            })
+        })
+
     };
 </script>
 {% endblock %}

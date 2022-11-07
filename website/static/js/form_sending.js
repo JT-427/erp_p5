@@ -26,6 +26,6 @@ function toast_alert(result, message, reload=true){
   const toast = new bootstrap.Toast(toastLiveExample)
   toast.show();
   window.setTimeout(
-    (() => reload?location.reload():toast.hide()), 700
+    (() => reload?location.reload():toast.hide()), 1500
   );
 };

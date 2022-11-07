@@ -27,5 +27,4 @@ class ProjectDispatchAPI(Resource):
         args = project_dispatch_put_args.parse_args()
         project = ProjectC(project_id)
         project.dispatch(**args)
-        
         return 201

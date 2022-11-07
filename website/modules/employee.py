@@ -295,14 +295,14 @@ class EmployeeC:
         ).delete()
         db.session.commit()
         return True
-    def report_dispatches(self, date: str, projects: dict):
+    def report_dispatches(self, date: str, projects: dict, working_days: float):
         employee_id = self.employee_id
 
         count = sum([ 1 if i else 0 for i in projects.values()])
         days = []
         for i in range(count-1):
-            days.append(1/count)
-        days.append(1-sum(days))
+            days.append(working_days/count)
+        days.append(working_days-sum(days))
 
         query = db.session.query(
             ProjectLabor
@@ -322,10 +322,10 @@ class EmployeeC:
             else:
                 i.working_days = None
 
-        if working_days_origin == 1.0 or working_days_origin == 0:
-            db.session.commit()
-        else:
-            db.session.rollback()
+        # if working_days_origin == 1.0 or working_days_origin == 0:
+        db.session.commit()
+        # else:
+        #     db.session.rollback()
             
 
     def get_hired_record(self):

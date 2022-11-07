@@ -49,7 +49,8 @@ def create_app(config_file="config.py"):
         MatarialTransferAPI,
         MatarialSupplierAPI, MatarialSupplierListAPI,
         MiscellaneousExpenditureAPI,
-        CompanyAPI, CompanyListAPI
+        CompanyAPI, CompanyListAPI,
+        dispatchNotifyAPI
     )
     api.add_resource(ProjectListAPI, "/api/project/", endpoint="project_api")
     api.add_resource(ProjectAPI, "/api/project/<string:project_id>")
@@ -90,6 +91,8 @@ def create_app(config_file="config.py"):
 
     api.add_resource(CompanyListAPI, "/api/company/")
     api.add_resource(CompanyAPI, "/api/company/<string:company_id>")
+
+    api.add_resource(dispatchNotifyAPI, "/api/dispatchNotify/<string:date>")
 
 
     from .routes import auth_, project_, customer_, outsourcer_, employee_, employeeReport_, matarial_, storehouse_, miscellaneousExpenditure_, matarial_supplier_, company_
