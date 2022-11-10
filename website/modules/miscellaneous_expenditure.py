@@ -45,7 +45,7 @@ class MiscellaneousExpenditureC:
                 MiscellaneousExpenditure.sn == sn
             )
         ).order_by(
-            desc(MiscellaneousExpenditure.sn)
+            desc(MiscellaneousExpenditure.date)
         ).all()
         return query
     def modify(self, **kwargs):

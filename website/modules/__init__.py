@@ -7,3 +7,4 @@ from .matarial import MatarialC
 from .matraila_suppler import MatarialSupplierC
 from .miscellaneous_expenditure import MiscellaneousExpenditureC
 from .company import CompanyC
+from .reports import ReportsC

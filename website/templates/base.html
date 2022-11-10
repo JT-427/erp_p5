@@ -41,6 +41,16 @@
             {% if user.check_authority('website.routes.employee_report', 'index') %}
               <li><a class="nav-link" href="/employeeReport/">回報</a></li>
             {% endif %}
+            {% if user.check_authority('website.routes.reports', 'monthly_terminated_projects') %}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  報表
+                </a>
+                <ul class="dropdown-menu">
+                  <li><a class="dropdown-item" href="/reports/monthly_terminated_projects">月報表</a></li>
+                </ul>
+              </li>
+            {% endif %}
           </ul>
         </div>
       </div>

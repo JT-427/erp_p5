@@ -1,10 +1,10 @@
 {% extends "base.html" %}
-{% block title %}出工紀錄{% endblock %}
+{% block title %}月報表{% endblock %}
 {% block body %}
 <div class="container">
     <div class="row mt-3">    
         <div class="col mb-3">
-            <h3>{{ user.Employee.name }}．出工紀錄</h3>
+            <!-- <h3>{{ user.Employee.name }}．出工紀錄</h3> -->
         </div>
         <div class="row">
             <div class="col-6">
@@ -35,22 +35,34 @@
     <table class="table table-bordered mt-3" style="vertical-align:middle;" id="dataTable">
         <thead>
           <tr>
-            <th scope="col">日期</th>
+            <th scope="col">業主</th>
             <th scope="col">案場</th>
-            <th scope="col">總工時</th>
+            <th scope="col">結案日期</th>
+            <th scope="col">實收金額</th>
+            <th scope="col">成本</th>
+            <th scope="col">毛利</th>
           </tr>
         </thead>
         <tbody>
-            {% for record in records %}
+            {% for report in reports %}
             <tr>
-                <td>{{ record['date'] }}</td>
-                <td>{{ record['project_name'] }}</td>
-                <td>{{ record['working_days'] if record['working_days'] else null }}</td>
+                <td>{{ report['customer_name'] }}</td>
+                <td>{{ report['project_name'] }}</td>
+                <td>{{ report['finish_date'] }}</td>
+                <td>{{ report['income'] if report['income'] else 0 }}</td>
+                <td>{{ report['cost'] }}</td>
+                <td>{{ (report['income'] if report['income'] else 0) - (report['cost'] if report['cost'] else 0) }}</td>
             </tr>
             {% endfor %}
         </tbody>
-        
     </table>
+    {% if me %}
+    <p>雜支：${{ me }}</p>
+    <p>淨利：${{ net_income }} - ${{ me }} = ${{ net_income - me }}</p>
+    {% else %}
+    <p>淨利：${{ net_income }}</p>
+    {% endif %}
+    
 </div>
 <script>
     const employee_id = "{{ user.Employee.employee_id }}";
@@ -58,14 +70,12 @@
     const yearSelector = document.getElementById('year');
     const monthSelector = document.getElementById('month');
     const today = new Date();
-    if(today.getDate() < 11){
-        if(today.getMonth() === 0){
-            var todayM = 12;
-            var todayY = today.getFullYear() - 1;
-        }else{
-            var todayM = today.getMonth();
-            var todayY = today.getFullYear();
-        }
+
+    const queryString = window.location.search;
+    const urlParams = new URLSearchParams(queryString);
+    if(urlParams.get('year') && urlParams.get('month')){
+        var todayM = urlParams.get('month');
+        var todayY = urlParams.get('year');
     }else{
         var todayM = today.getMonth() + 1;
         var todayY = today.getFullYear();
@@ -82,31 +92,10 @@
     monthSelector.value = todayM;
 
     yearSelector.addEventListener('change', () => {
-        get_dispatches();
+        location.href = `/reports/monthly_terminated_projects?year=${yearSelector.value}&month=${monthSelector.value}`;
     });
     monthSelector.addEventListener('change', () => {
-        get_dispatches();
+        location.href = `/reports/monthly_terminated_projects?year=${yearSelector.value}&month=${monthSelector.value}`;
     });
-
-    function get_dispatches(){
-        fetch(`/api/employeeDispatch/${employee_id}/${yearSelector.value}/${monthSelector.value}`, {
-            'method': 'get'
-        }).then((response) => {
-            return response.json()
-        }).then((data) => {
-            const table = document.getElementById('dataTable');
-            const tbody = table.querySelector('tbody');
-            tbody.innerHTML = '';
-            for(i=0; i<data.length; i++){
-                tbody.innerHTML += `
-                    <tr sn="${data[i]['sn']}">
-                        <td name="date">${data[i]['date']}</td>
-                        <td name="project_name">${data[i]['project_name']}</td>
-                        <td name="working_days">${data[i]['working_days'] === null ? '': data[i]['working_days']}</td>
-                    </tr>
-                `;
-            }
-        });
-    };
 </script>
 {% endblock %}

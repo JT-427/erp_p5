@@ -35,7 +35,7 @@
                 <td name="employee_id" style="display: none;">{{ record['employee_id'] if record['employee_id'] else null }}</td>
                 <td name="project_name">{{ record['project_name'] if record['project_name'] else null }}</td>
                 <td name="project_id" style="display: none;">{{ record['project_id'] if record['project_id'] else null }}</td>
-                <td name="description">{{ record['description'] }}</td>
+                <td name="description">{{ record['description'] if record['description'] else null }}</td>
                 <td name="classification">{{ record['classification'] }}</td>
                 <td name="price">{{ record['price'] }}</td>
                 {% if admin %}

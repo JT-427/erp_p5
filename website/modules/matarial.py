@@ -557,7 +557,6 @@ class MatarialC:
             MatarialInStorehouse.storehouse_id,
             MatarialInStorehouse.date,
             MatarialInStorehouse.remaining,
-            
         ).filter(
             or_(
                 storehouse_id == '',

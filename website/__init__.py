@@ -95,7 +95,7 @@ def create_app(config_file="config.py"):
     api.add_resource(dispatchNotifyAPI, "/api/dispatchNotify/<string:date>")
 
 
-    from .routes import auth_, project_, customer_, outsourcer_, employee_, employeeReport_, matarial_, storehouse_, miscellaneousExpenditure_, matarial_supplier_, company_
+    from .routes import auth_, project_, customer_, outsourcer_, employee_, employeeReport_, matarial_, storehouse_, miscellaneousExpenditure_, matarial_supplier_, company_, reports_
     app.register_blueprint(auth_, url_prefix='/')
     app.register_blueprint(project_, url_prefix='/project')
     app.register_blueprint(customer_, url_prefix='/customer')
@@ -107,6 +107,7 @@ def create_app(config_file="config.py"):
     app.register_blueprint(matarial_supplier_, url_prefix='/matarialSupplier')
     app.register_blueprint(miscellaneousExpenditure_, url_prefix='/miscellaneousExpenditure')
     app.register_blueprint(company_, url_prefix='/company')
+    app.register_blueprint(reports_, url_prefix='/reports')
 
 
     from .flaskCLI import cli
