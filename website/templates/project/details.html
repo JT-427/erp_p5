@@ -12,6 +12,7 @@
             <h3>{{ project['customer_name'] }}</h3>
         </div>
         <div class="col text-end">
+            <button type="button" class="btn btn-success" id="import" data-bs-toggle="modal" data-bs-target="#importFileModal">匯入</button>
             <button type="button" class="btn btn-primary" id="add_details">+新增項目</button>
         </div>
     </div>
@@ -141,7 +142,7 @@
             </div>
         </div>
     </div>
-    <!-- modify project AR -->
+    <!-- modify project Account Receivable -->
     <div class="modal fade" id="modifyARModal" tabindex="-1" aria-labelledby="modifyARModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
@@ -202,6 +203,28 @@
                     <button type="button" class="btn btn-primary" name="submit">送出</button>
                     <button type="button" class="btn btn-danger" name="delete">刪除</button>
                 </div>
+            </div>
+        </div>
+    </div>
+    <!-- import file -->
+    <div class="modal fade" id="importFileModal" tabindex="-1" aria-labelledby="importFileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content">
+                <form method="post" action="" enctype=multipart/form-data>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="importFileModalLabel">{{ project['project_name'] }} 報價單匯入</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label for="formFile" class="form-label">匯入檔案</label>
+                            <input class="form-control" type="file" id="formFile" name="import_file">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary" name="submit">送出</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

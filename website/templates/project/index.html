@@ -27,9 +27,15 @@
                     <th scope="col">案場</th>
                     <th style="display:none;"></th>
                     <th scope="col">地址</th>
+                    {% if user.check_authority('website.routes.customer', 'index') %}
                     <th scope="col"><a href="/customer/">業主</a></th>
+                    {% endif %}
+                    {% if user.check_authority('website.routes.outsourcer', 'index') %}
                     <th scope="col"><a href="/outsourcer/">外包</a></th>
+                    {% endif %}
+                    {% if user.check_authority('website.routes.project', 'details') %}
                     <th scope="col">報價單</th>
+                    {% endif %}
                     {% if admin %}
                     <th scope="col">派工</th>
                     <th scope="col">成本</th>
@@ -42,8 +48,10 @@
                     <td name="project_name">{{ project['project_name'] }}</td>
                     <td name="project_id" style="display:none;">{{ project['project_id'] }}</td>
                     <td name="address">{{ project['address'] }}</td>
+                    {% if user.check_authority('website.routes.customer', 'index') %}
                     <td name="customer_name">{{ project['customer_name'] }}</td>
                     <td name="customer_id" style="display:none;">{{ project['customer_id'] }}</td>
+                    {% endif %}
                     <td name="company_name" style="display:none;">{{ project['company_name'] }}</td>
                     <td name="company_id" style="display:none;">{{ project['company_id'] }}</td>
                     <td name="invoice" style="display:none;">{{ project['invoice']|string|lower }}</td>
@@ -52,16 +60,20 @@
                     <td name="finish_date" style="display:none;">{{ project['finish_date'] }}</td>
                     <td name="referrer" style="display:none;">{{ project['referrer'] if project['referrer'] else null }}</td>
                     <td name="commision" style="display:none;">{{ project['commision'] }}</td>
+                    {% if user.check_authority('website.routes.outsourcer', 'index') %}
                     <td>
                         <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="外包,{{ project['project_id'] }}">
                             <i class="fa-solid fa-right-from-bracket"></i>
                         </button>
                     </td>
+                    {% endif %}
+                    {% if user.check_authority('website.routes.project', 'details') %}
                     <td>
                         <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="報價單,{{ project['project_id'] }}">
                             <i class="fas fa-file-invoice-dollar" aria-hidden="true"></i>
                         </button>
                     </td>
+                    {% endif %}
                     {% if admin %}
                     <td>
                         <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#project_modal" data-bs-whatever="派工,{{ project['project_id'] }}">
@@ -169,17 +181,8 @@
 </div>
 <script type="text/javascript" src="{{ url_for('static', filename='js/form_sending.js') }}"></script>
 <script type="text/javascript" src="{{ url_for('static', filename='js/table_serach.js') }}"></script>
+{% if user.user_id in (1, 110) %}
 <script>
-    const modeSelector = document.getElementById('mode');
-    modeSelector.addEventListener('change', (event) => {
-        window.location.href = '/project/?mode='+event.target.value;
-    })
-    const mode = document.getElementById('mode');
-    mode.value = "{{ mode }}";
-
-
-    const projectModifyModal = document.getElementById('projectModifyModal')
-
     // create new project
     let create_btn = document.getElementById('create_btn');
     create_btn.addEventListener('click', () => {
@@ -202,6 +205,58 @@
         delete_btn.style.display = 'none';
         modifyModal.show(projectModifyModal);
     });
+    // modify data
+    const all_data = document.getElementById('dataTable').querySelector('tbody').querySelectorAll('tr');
+    for(i=0; i<all_data.length; i++){
+        const row = all_data[i];
+        row.children[0].addEventListener('click', (event) => {
+            const btModal = new bootstrap.Modal('#projectModifyModal', {
+                keyboard: false
+            });
+            var modalTitle = projectModifyModal.querySelector('.modal-title');
+            modalTitle.innerHTML = '修改資料';
+            var modalBody = projectModifyModal.querySelector('.modal-body');
+            let inputs = projectModifyModal.querySelectorAll('input');
+            for(pos=0; pos<inputs.length; pos++){
+                inputs[pos].value = '';
+            };
+            
+            async function data_fillin(){
+                let get_ = await get_cusotmers();
+                let company_ = await get_company();
+                const inputs_ = modalBody.querySelectorAll('input, select')
+                for(g=0; g<inputs_.length; g++){
+                    var item = inputs_[g];
+                    item.value = row.querySelector(`[name="${item.id}"]`).textContent;
+                };
+            }
+            const commit_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="commit"]');
+            commit_btn.innerHTML = '修改';
+            commit_btn.setAttribute('onclick', `send("put", "${event.target.parentElement.id}")`);
+            const delete_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="delete"]');
+            delete_btn.setAttribute('onclick', `delete_project("${event.target.parentElement.id}")`);
+            delete_btn.style.display = 'block';
+            data_fillin();
+            btModal.show(projectModifyModal);
+        });
+    }
+
+</script>
+{% else %}
+<script>
+    document.getElementById('create_btn').disabled = true;
+</script>
+{% endif %}
+<script>
+    const modeSelector = document.getElementById('mode');
+    modeSelector.addEventListener('change', (event) => {
+        window.location.href = '/project/?mode='+event.target.value;
+    })
+    const mode = document.getElementById('mode');
+    mode.value = "{{ mode }}";
+
+
+    const projectModifyModal = document.getElementById('projectModifyModal');
  
     // show 報價單or派工
     const project_modal = document.getElementById('project_modal')
@@ -454,43 +509,6 @@
         };
     });
     
-    // modify data
-    const all_data = document.getElementById('dataTable').querySelector('tbody').querySelectorAll('tr');
-    for(i=0; i<all_data.length; i++){
-        const row = all_data[i];
-        row.children[0].addEventListener('click', (event) => {
-            const btModal = new bootstrap.Modal('#projectModifyModal', {
-                keyboard: false
-            });
-            var modalTitle = projectModifyModal.querySelector('.modal-title');
-            modalTitle.innerHTML = '修改資料';
-            var modalBody = projectModifyModal.querySelector('.modal-body');
-            let inputs = projectModifyModal.querySelectorAll('input');
-            for(pos=0; pos<inputs.length; pos++){
-                inputs[pos].value = '';
-            };
-            
-            async function data_fillin(){
-                let get_ = await get_cusotmers();
-                let company_ = await get_company();
-                const inputs_ = modalBody.querySelectorAll('input, select')
-                for(g=0; g<inputs_.length; g++){
-                    var item = inputs_[g];
-                    item.value = row.querySelector(`[name="${item.id}"]`).textContent;
-                };
-            }
-            const commit_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="commit"]');
-            commit_btn.innerHTML = '修改';
-            commit_btn.setAttribute('onclick', `send("put", "${event.target.parentElement.id}")`);
-            const delete_btn = projectModifyModal.querySelector('.modal-footer').querySelector('[name="delete"]');
-            delete_btn.setAttribute('onclick', `delete_project("${event.target.parentElement.id}")`);
-            delete_btn.style.display = 'block';
-            data_fillin();
-            btModal.show(projectModifyModal);
-        });
-    }
-
-
     // get list of customer
     function get_cusotmers(){
         return new Promise((resolve, reject) => {

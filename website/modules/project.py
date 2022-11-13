@@ -55,9 +55,8 @@ class ProjectC:
         return query
 
     @check_id
-    def modify_details(self, description, unit, quantity, unit_price, price, date, sn=None):
+    def modify_details(self, description, unit, quantity, unit_price, price, date=dt.date.today(), sn=None):
         project_id = self.project_id
-        date = dt.date.today()
         delta = 0
         if sn:
             query = db.session.query(

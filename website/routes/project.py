@@ -1,6 +1,7 @@
-from flask import Blueprint, render_template, request
+from flask import Blueprint, render_template, request, redirect, url_for
 from flask_login import current_user, login_required
 import datetime as dt
+import pandas as pd
 
 from ..modules import ProjectC
 from ..modules.decorator import check_authority
@@ -28,11 +29,27 @@ def index():
     )
 
 
-@project.route("/details/<project_id>", methods=['GET'])
+@project.route("/details/<project_id>", methods=['GET', 'POST'])
 @login_required
 @check_authority
 def details(project_id):
     project_ = ProjectC(project_id)
+    if request.method == "POST":
+        file = request.files['import_file']
+        file = pd.read_csv(
+            file, 
+            dtype={
+                '項目': str,
+                '單位': str,
+                '數量': float,
+                '單價': float
+            }
+        )
+        file.columns = ['description', 'unit', 'quantity', 'unit_price']
+        file['price'] = file['quantity'] * file['unit_price']
+        for i in file.to_dict('index').values():
+            project_.modify_details(**i)
+        return redirect(url_for('project.details', project_id=project_id))
     info = project_.get_info()
     details_ = project_.get_details()
     total_ = sum([i.price for i in details_])
@@ -40,7 +57,7 @@ def details(project_id):
 
     payment_records = project_.get_payment()
     total_payment = sum([i.amount for i in payment_records])
-
+        
     return render_template(
         'project/details.html', 
         project=info, 
