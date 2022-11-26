@@ -292,6 +292,15 @@
                 if(modalBody.getAttribute('sn')){
                     data['sn'] = modalBody.getAttribute('sn');
                 }
+                var now = new Date();
+                var month = (now.getMonth() + 1);               
+                var day = now.getDate();
+                if (month < 10) 
+                    month = "0" + month;
+                if (day < 10) 
+                    day = "0" + day;
+                var today = now.getFullYear() + '-' + month + '-' + day;
+                data['date'] = today;
                 requset_and_toast_alert('/api/projectDetails/'+project_id, 'put', data, '新增');
             }else if(btn.name === 'delete'){
                 if(modalBody.getAttribute('sn')){

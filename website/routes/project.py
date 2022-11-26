@@ -36,7 +36,7 @@ def details(project_id):
     project_ = ProjectC(project_id)
     if request.method == "POST":
         file = request.files['import_file']
-        file = pd.read_csv(
+        file = pd.read_excel(
             file, 
             dtype={
                 '項目': str,
