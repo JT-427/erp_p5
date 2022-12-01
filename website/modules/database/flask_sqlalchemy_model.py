@@ -288,7 +288,7 @@ class Customer(db.Model):
 
 
 class Project(db.Model):
-    project_id = db.Column(db.String(32), primary_key=True)
+    project_id = db.Column(db.String(100), primary_key=True)
     project_name = db.Column(db.String(10), nullable=False)
     address = db.Column(db.String(50), nullable=False)
     invoice = db.Column(db.Boolean, default=True, nullable=False)

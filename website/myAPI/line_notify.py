@@ -12,6 +12,9 @@ class dispatchNotifyAPI(Resource):
     @login_required
     def get(self, date):
         # date = dt.date.today() + dt.timedelta(1) if dt.datetime.now().hour > 6 else dt.date.today()
+        import time
+        db.session.close()
+        db.session.begin()
         q1 = db.session.query(
             ProjectLabor.employee_id,
             ProjectLabor.project_id,
@@ -33,6 +36,7 @@ class dispatchNotifyAPI(Resource):
         ).group_by(
             q1.c.project_id
         ).all()
+        db.session.close()
         if query:
             msg = date+'\n\n'
             for project in query:
