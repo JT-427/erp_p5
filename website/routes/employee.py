@@ -38,7 +38,10 @@ def dispatch(employee_id):
     if today.day < 11:
         today -= dt.timedelta(15)
     records = employee.get_dispatches(year=today.year, month=today.month)
-    summation = (sum([i['working_days'] if i['working_days'] else 0 for i in records]), sum([i['accounts_payable'] if i['accounts_payable'] else 0 for i in records]))
+    summation = (
+        round(sum([i['working_days'] if i['working_days'] else 0 for i in records]), 1), 
+        round(sum([i['accounts_payable'] if i['accounts_payable'] else 0 for i in records]),1)
+    )
     return render_template('employee/dispatch.html', employee=employee, records=records, summation=summation, user=current_user)
 
 @employee.route("/hired-record/<employee_id>", methods=['GET'])
