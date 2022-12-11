@@ -49,8 +49,8 @@
                     <td name="project_id" style="display:none;">{{ project['project_id'] }}</td>
                     <td name="address">{{ project['address'] }}</td>
                     {% if user.check_authority('website.routes.customer', 'index') %}
-                    <td name="customer_name">{{ project['customer_name'] }}</td>
-                    <td name="customer_id" style="display:none;">{{ project['customer_id'] }}</td>
+                    <td name="customer_id">{{ project['customer_name'] }}</td>
+                    <!-- <td name="customer_id" style="display:none;">{{ project['customer_id'] }}</td> -->
                     {% endif %}
                     <td name="company_name" style="display:none;">{{ project['company_name'] }}</td>
                     <td name="company_id" style="display:none;">{{ project['company_id'] }}</td>
@@ -130,9 +130,10 @@
                 </div>
                 <div class="mb-3">
                     <label for="customer_id" class="form-label">業主</label>
-                    <select id="customer_id" class="form-select">
+                    <input type="text" class="form-control" id="customer_id" list="customers" shouldCheck="true" required>
+                    <datalist id="customers">
                         
-                    </select>
+                    </datalist>
                 </div>
                 <div class="mb-3">
                     <label for="company_id" class="form-label">公司</label>
@@ -512,7 +513,7 @@
     // get list of customer
     function get_cusotmers(){
         return new Promise((resolve, reject) => {
-            let modal_ls_customer = document.getElementById('customer_id');
+            let modal_ls_customer = document.getElementById('customers');
             modal_ls_customer.innerHTML = '';
 
             fetch('/api/customer/', {
@@ -525,7 +526,7 @@
             }).then(function(data){
                 for(i=0; i<data.length; i++){
                     let customer_option = document.createElement('option');
-                    customer_option.setAttribute('value', data[i]['customer_id']);
+                    customer_option.setAttribute('thisId', data[i]['customer_id']);
                     customer_option.innerHTML = data[i]['customer_name'];
                     modal_ls_customer.appendChild(customer_option);
                 }
@@ -621,7 +622,21 @@
             var value = item.value;
             if(item.getAttribute('required') !== null & (value === "" | value === null)){
                 filled = false;
+                toast_alert('fail', '未填寫'+item.parentElement.children[0].innerHTML, false);
                 break;
+            }
+            if(item.getAttribute('shouldCheck') !== null){
+                ls = item.parentElement.getElementsByTagName('option');
+                for(v=0; v<ls.length; v++){
+                    if(ls[v].innerHTML == item.value){
+                        value = ls[v].getAttribute('thisId');
+                        break;
+                    }
+                }
+                if(item.value === value){
+                    toast_alert('fail', '請填寫選單中的'+item.parentElement.children[0].innerHTML, false);
+                    filled=false;
+                }
             }
             value = value === "true"? true: value === "false"? false: value !== '' ? value.trim() : null;
             data[item.id] = value;
@@ -632,8 +647,6 @@
             }else{
                 requset_and_toast_alert('/api/project/'+project_id, method, data, '修改');
             }
-        }else{
-            toast_alert('fail', '未填寫'+item.parentElement.children[0].innerHTML, false);
         }
     };
 
@@ -650,7 +663,6 @@
             const assigned = employee.checked;
             requset_and_toast_alert('/api/projectDispatch/'+project_id, 'put', {'employee_id': employee_id, 'date': date, 'assigned': assigned}, '派工', false);
         }
-        console.log()
         // Line notify (personal)
         fetch('/api/dispatchNotify/'+document.getElementById('date').value, {
             method: 'GET',

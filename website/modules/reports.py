@@ -98,8 +98,11 @@ class ReportsC:
             projects.c.project_name,
             Customer.customer_name,
             projects.c.finish_date,
-            payments.c.income,
-            (
+            func.round(
+                payments.c.income, 
+                2
+            ).label('income'),
+            func.round(
                 func.IF(
                     labor.c.payment != None,
                     labor.c.payment,
@@ -124,7 +127,8 @@ class ReportsC:
                     projects.c.commision != None,
                     projects.c.commision,
                     0   
-                )
+                ),
+                2
             ).label('cost')
         ).outerjoin(
             payments,

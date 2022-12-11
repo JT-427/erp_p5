@@ -25,8 +25,8 @@
                 <tr sn="{{ record['sn'] }}">
                     <td name="using_date">{{ record['date'] }}</td>
                     <td name="quantity">{{ record['quantity'] }}</td>
-                    <td name="project_name">{{ record['project_name'] }}</td>
-                    <td name="project_id" style="display:none;">{{ record['project_id'] }}</td>
+                    <td name="project_id">{{ record['project_name'] }}</td>
+                    <!-- <td name="project_id" style="display:none;">{{ record['project_id'] }}</td> -->
                     <td name="storehouse_id" style="display: none;">{{ record['storehouse_id'] }}</td>
                     <td name="employee_id" style="display: none;">{{ record['employee_id'] }}</td>
                 </tr>
@@ -50,7 +50,7 @@
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="quantity">數量</label>
-                        <input type="number" class="form-control" id="quantity">
+                        <input type="number" class="form-control" id="quantity" required>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="employee_id">提貨人</label>
@@ -60,9 +60,10 @@
                     </div>
                     <div class="mb-3">
                         <label for="project_id" class="form-label">案場</label>
-                        <select id="project_id" class="form-select">
-                            <!--  -->
-                        </select>
+                        <input type="text" class="form-control" id="project_id" list="projects" shouldCheck="true" required>
+                        <datalist id="projects">
+                            
+                        </datalist>
                     </div>
                     <div class="mb-3">
                         <label class="form-label" for="storehouse_id">存入倉庫</label>
@@ -115,12 +116,12 @@
             }).then(function(response){
                 return response.json();
             }).then(function(data){
-                let projects_option = document.getElementById('project_id');
+                let projects_option = document.getElementById('projects');
                 projects_option.innerHTML = '';
                 for(i=0; i<data.length; i++){
                     let row = data[i];
                     let option = document.createElement('option');
-                    option.value = row['project_id'];
+                    option.setAttribute('thisId', row['project_id']);
                     option.innerHTML = row['project_name'];
                     projects_option.appendChild(option);
                 }

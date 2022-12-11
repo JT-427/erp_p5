@@ -271,7 +271,7 @@ class Outsourcer(db.Model):
 class Customer(db.Model):
     # 業主
     customer_id = db.Column(db.String(32), primary_key=True)
-    customer_name = db.Column(db.String(50), nullable=False)
+    customer_name = db.Column(db.String(50), nullable=False, unique=True)
     customer_title = db.Column(db.String(50))
     address = db.Column(db.String(50))
     tax_id_num = db.Column(db.Integer)
@@ -289,7 +289,7 @@ class Customer(db.Model):
 
 class Project(db.Model):
     project_id = db.Column(db.String(100), primary_key=True)
-    project_name = db.Column(db.String(10), nullable=False)
+    project_name = db.Column(db.String(10), nullable=False, unique=True)
     address = db.Column(db.String(50), nullable=False)
     invoice = db.Column(db.Boolean, default=True, nullable=False)
     singing_date = db.Column(db.Date)

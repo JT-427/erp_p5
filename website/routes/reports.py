@@ -24,9 +24,13 @@ def monthly_terminated_projects():
         year = today_.year
         month = today_.month
     this_report = reports_c.monthly_terminated_projects(year, month)
+    for i in this_report:
+        print(i)
 
     me = db.session.query(
-        func.sum(MiscellaneousExpenditure.price)
+        func.round(
+            func.sum(MiscellaneousExpenditure.price), 2
+        )
     ).filter(
         MiscellaneousExpenditure.project_id == None,
         MiscellaneousExpenditure.date >= dt.date(year, month, 1),

@@ -346,14 +346,23 @@ class MatarialC:
             desc(MatarialInStorehouse.sn)
         ).first()
         def buying_and_using_record(quantity):
-            buying_query = db.session.query(
-                MatarialBuyingRecord
-            ).filter(
-                MatarialBuyingRecord.matarial_id == matarial_id,
-                MatarialBuyingRecord.remaining != 0
-            ).order_by(
-                asc(MatarialBuyingRecord.buying_date)
-            ).all()
+            if quantity > 0:
+                buying_query = db.session.query(
+                    MatarialBuyingRecord
+                ).filter(
+                    MatarialBuyingRecord.matarial_id == matarial_id,
+                    MatarialBuyingRecord.remaining != 0
+                ).order_by(
+                    asc(MatarialBuyingRecord.buying_date)
+                ).all()
+            else:
+                buying_query = db.session.query(
+                    MatarialBuyingRecord
+                ).filter(
+                    MatarialBuyingRecord.matarial_id == matarial_id
+                ).order_by(
+                    asc(MatarialBuyingRecord.buying_date)
+                ).all()
             for buying_record in buying_query:
                 if buying_record.remaining >= quantity:
                     new_using_record = MatarialUsingRecord(
